@@ -10,6 +10,7 @@ export default function RegisterPage() {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -17,6 +18,12 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         setError("");
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            setLoading(false);
+            return;
+        }
 
         try {
             const res = await fetch("/api/auth/register", {
@@ -90,6 +97,17 @@ export default function RegisterPage() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            className="w-full p-2 rounded bg-input border border-border focus:border-primary focus:outline-none text-foreground"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1 text-muted-foreground">Confirm Password</label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full p-2 rounded bg-input border border-border focus:border-primary focus:outline-none text-foreground"
                             required
                         />
