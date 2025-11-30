@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useFileSystemStore, FileNode } from "@/store/use-file-system-store";
 import { useEditorStore } from "@/store/use-editor-store";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export function Sidebar({ projectId }: { projectId: string }) {
     const { files, activeFileId, setActiveFile, toggleFolder, addFile, deleteFile, renameFile, moveFile } = useFileSystemStore();
@@ -20,6 +21,16 @@ export function Sidebar({ projectId }: { projectId: string }) {
     const [renamingId, setRenamingId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [dragOverId, setDragOverId] = React.useState<string | null>(null);
+
+    const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
+        isOpen: boolean;
+        file: FileNode | null;
+        message: string;
+    }>({
+        isOpen: false,
+        file: null,
+        message: "",
+    });
 
     const handleFileClick = (file: FileNode) => {
         if (renamingId === file.id) return; // Don't toggle if renaming
@@ -102,155 +113,190 @@ export function Sidebar({ projectId }: { projectId: string }) {
         if (e.key === "Enter") {
             handleRenameSubmit();
         } else if (e.key === "Escape") {
-            const { deleteFile: deleteFileAction } = await import("@/app/actions");
-            await deleteFileAction(file.id);
-        };
+            setRenamingId(null);
+        }
+    };
 
-        // Drag and Drop Handlers
-        const handleDragStart = (e: React.DragEvent, file: FileNode) => {
-            e.dataTransfer.setData("fileId", file.id);
-            e.dataTransfer.effectAllowed = "move";
-        };
+    const handleDeleteClick = (e: React.MouseEvent, file: FileNode) => {
+        e.stopPropagation();
 
-        const handleDragOver = (e: React.DragEvent, file: FileNode) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (file.type === "folder") {
-                setDragOverId(file.id);
-                e.dataTransfer.dropEffect = "move";
-            } else {
-                setDragOverId(null);
-                e.dataTransfer.dropEffect = "none";
+        let message = `Yakin ingin menghapus ${file.name}?`;
+
+        // Check if folder has children
+        if (file.type === "folder") {
+            const hasChildren = files.some(f => f.parentId === file.id);
+            if (hasChildren) {
+                message = "Folder ini tidak kosong. Yakin ingin menghapus?";
             }
-        };
+        }
 
-        const handleDragLeave = (e: React.DragEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
+        setDeleteConfirmation({
+            isOpen: true,
+            file,
+            message,
+        });
+    };
+
+    const handleConfirmDelete = async () => {
+        const file = deleteConfirmation.file;
+        if (!file) return;
+
+        setDeleteConfirmation({ ...deleteConfirmation, isOpen: false });
+
+        // Optimistic
+        deleteFile(file.id);
+
+        // Server
+        const { deleteFile: deleteFileAction } = await import("@/app/actions");
+        await deleteFileAction(file.id);
+    };
+
+    // Drag and Drop Handlers
+    const handleDragStart = (e: React.DragEvent, file: FileNode) => {
+        e.dataTransfer.setData("fileId", file.id);
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e: React.DragEvent, file: FileNode) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (file.type === "folder") {
+            setDragOverId(file.id);
+            e.dataTransfer.dropEffect = "move";
+        } else {
             setDragOverId(null);
-        };
+            e.dataTransfer.dropEffect = "none";
+        }
+    };
 
-        const handleDrop = async (e: React.DragEvent, targetFolder: FileNode | null) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setDragOverId(null);
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOverId(null);
+    };
 
-            const fileId = e.dataTransfer.getData("fileId");
-            if (!fileId) return;
+    const handleDrop = async (e: React.DragEvent, targetFolder: FileNode | null) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOverId(null);
 
-            // Prevent dropping onto itself or immediate parent (optimization)
-            const file = files.find(f => f.id === fileId);
-            const targetId = targetFolder ? targetFolder.id : null;
+        const fileId = e.dataTransfer.getData("fileId");
+        if (!fileId) return;
 
-            if (!file || file.parentId === targetId || file.id === targetId) return;
+        // Prevent dropping onto itself or immediate parent (optimization)
+        const file = files.find(f => f.id === fileId);
+        const targetId = targetFolder ? targetFolder.id : null;
 
-            const originalParentId = file.parentId;
+        if (!file || file.parentId === targetId || file.id === targetId) return;
 
-            // Optimistic update
-            moveFile(fileId, targetId);
+        const originalParentId = file.parentId;
 
-            // Server update
-            const { moveFile: moveFileAction } = await import("@/app/actions");
-            const result = await moveFileAction(fileId, targetId);
+        // Optimistic update
+        moveFile(fileId, targetId);
 
-            if (result?.error) {
-                // Revert
-                moveFile(fileId, originalParentId);
-                console.error(result.error);
-            }
-        };
+        // Server update
+        const { moveFile: moveFileAction } = await import("@/app/actions");
+        const result = await moveFileAction(fileId, targetId);
 
-        // Handle drop on empty area (root)
-        const handleRootDrop = async (e: React.DragEvent) => {
-            e.preventDefault();
-            // Remove strict check to allow bubbling from empty areas
-            // if (e.target !== e.currentTarget) return;
+        if (result?.error) {
+            // Revert
+            moveFile(fileId, originalParentId);
+            console.error(result.error);
+        }
+    };
 
-            const fileId = e.dataTransfer.getData("fileId");
-            if (!fileId) return;
+    // Handle drop on empty area (root)
+    const handleRootDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        // Remove strict check to allow bubbling from empty areas
+        // if (e.target !== e.currentTarget) return;
 
-            const file = files.find(f => f.id === fileId);
-            if (!file || file.parentId === null) return;
+        const fileId = e.dataTransfer.getData("fileId");
+        if (!fileId) return;
 
-            const originalParentId = file.parentId;
+        const file = files.find(f => f.id === fileId);
+        if (!file || file.parentId === null) return;
 
-            moveFile(fileId, null);
-            const { moveFile: moveFileAction } = await import("@/app/actions");
-            const result = await moveFileAction(fileId, null);
+        const originalParentId = file.parentId;
 
-            if (result?.error) {
-                moveFile(fileId, originalParentId);
-                console.error(result.error);
-            }
-        };
+        moveFile(fileId, null);
+        const { moveFile: moveFileAction } = await import("@/app/actions");
+        const result = await moveFileAction(fileId, null);
 
-        // Build tree structure for rendering
-        const buildTree = (parentId: string | null = null, depth = 0): React.ReactNode[] => {
-            return files
-                .filter((f) => f.parentId === parentId)
-                .map((file) => (
-                    <div key={file.id}>
-                        <div
-                            draggable={renamingId !== file.id}
-                            onDragStart={(e) => handleDragStart(e, file)}
-                            onDragOver={(e) => handleDragOver(e, file)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, file)}
-                            className={cn(
-                                "flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 text-sm select-none group border-2 border-transparent",
-                                activeFileId === file.id && "bg-white/10 text-accent border-l-accent",
-                                dragOverId === file.id && "border-primary bg-primary/10"
-                            )}
-                            style={{ paddingLeft: `${depth * 12 + 8}px` }}
-                            onClick={() => handleFileClick(file)}
-                            onDoubleClick={(e) => handleDoubleClick(e, file)}
-                        >
-                            <span className="opacity-70">
-                                {file.type === "folder" ? (
-                                    file.isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
-                                ) : (
-                                    <span className="w-[14px]" />
-                                )}
-                            </span>
+        if (result?.error) {
+            moveFile(fileId, originalParentId);
+            console.error(result.error);
+        }
+    };
 
-                            <span className="text-accent/80">
-                                {file.type === "folder" ? (
-                                    file.isOpen ? <FolderOpen size={14} /> : <Folder size={14} />
-                                ) : (
-                                    <File size={14} />
-                                )}
-                            </span>
-
-                            {renamingId === file.id ? (
-                                <input
-                                    autoFocus
-                                    value={renameValue}
-                                    onChange={(e) => setRenameValue(e.target.value)}
-                                    onBlur={handleRenameSubmit}
-                                    onKeyDown={handleKeyDown}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="bg-background border border-primary text-foreground px-1 py-0.5 text-xs w-full outline-none rounded-sm"
-                                />
+    // Build tree structure for rendering
+    const buildTree = (parentId: string | null = null, depth = 0): React.ReactNode[] => {
+        return files
+            .filter((f) => f.parentId === parentId)
+            .map((file) => (
+                <div key={file.id}>
+                    <div
+                        draggable={renamingId !== file.id}
+                        onDragStart={(e) => handleDragStart(e, file)}
+                        onDragOver={(e) => handleDragOver(e, file)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, file)}
+                        className={cn(
+                            "flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 text-sm select-none group border-2 border-transparent",
+                            activeFileId === file.id && "bg-white/10 text-accent border-l-accent",
+                            dragOverId === file.id && "border-primary bg-primary/10"
+                        )}
+                        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+                        onClick={() => handleFileClick(file)}
+                        onDoubleClick={(e) => handleDoubleClick(e, file)}
+                    >
+                        <span className="opacity-70">
+                            {file.type === "folder" ? (
+                                file.isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
                             ) : (
-                                <div className="flex-1 flex items-center justify-between min-w-0">
-                                    <span className="truncate">{file.name}</span>
-                                    <button
-                                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 hover:text-red-400 rounded transition-all"
-                                        onClick={(e) => handleDeleteClick(e, file)}
-                                        title="Delete"
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                </div>
+                                <span className="w-[14px]" />
                             )}
-                        </div>
+                        </span>
 
-                        {file.type === "folder" && file.isOpen && buildTree(file.id, depth + 1)}
+                        <span className="text-accent/80">
+                            {file.type === "folder" ? (
+                                file.isOpen ? <FolderOpen size={14} /> : <Folder size={14} />
+                            ) : (
+                                <File size={14} />
+                            )}
+                        </span>
+
+                        {renamingId === file.id ? (
+                            <input
+                                autoFocus
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onBlur={handleRenameSubmit}
+                                onKeyDown={handleKeyDown}
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-background border border-primary text-foreground px-1 py-0.5 text-xs w-full outline-none rounded-sm"
+                            />
+                        ) : (
+                            <div className="flex-1 flex items-center justify-between min-w-0">
+                                <span className="truncate">{file.name}</span>
+                                <button
+                                    className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 hover:text-red-400 rounded transition-all"
+                                    onClick={(e) => handleDeleteClick(e, file)}
+                                    title="Delete"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                            </div>
+                        )}
                     </div>
-                ));
-        };
 
-        return (
+                    {file.type === "folder" && file.isOpen && buildTree(file.id, depth + 1)}
+                </div>
+            ));
+    };
+
+    return (
+        <>
             <div
                 className="h-full flex flex-col bg-secondary text-secondary-foreground border-r border-border font-sans"
                 onDragOver={(e) => e.preventDefault()}
@@ -271,5 +317,16 @@ export function Sidebar({ projectId }: { projectId: string }) {
                     {buildTree(null)}
                 </div>
             </div>
-        );
-    }
+
+            <ConfirmDialog
+                isOpen={deleteConfirmation.isOpen}
+                title="Hapus File"
+                message={deleteConfirmation.message}
+                confirmText="Hapus"
+                cancelText="Batal"
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
+            />
+        </>
+    );
+}
