@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 import { useEditorStore } from "@/store/use-editor-store";
+import { useFileSystemStore } from "@/store/use-file-system-store";
 import { AlertCircle, RefreshCw, Download, Image as ImageIcon, FileText } from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
@@ -25,10 +26,23 @@ mermaid.initialize({
 
 export function PreviewPane() {
     const { code } = useEditorStore();
+    const { activeFileId, files } = useFileSystemStore();
     const containerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [svg, setSvg] = useState<string>("");
     const [scale, setScale] = useState(1);
+
+    const getFileName = (extension: string) => {
+        if (activeFileId) {
+            const file = files.find(f => f.id === activeFileId);
+            if (file) {
+                // Remove existing extension if present
+                const name = file.name.replace(/\.[^/.]+$/, "");
+                return `${name}.${extension}`;
+            }
+        }
+        return `diagram.${extension}`;
+    };
 
     useEffect(() => {
         const render = async () => {
@@ -70,7 +84,7 @@ export function PreviewPane() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "diagram.svg";
+        a.download = getFileName("svg");
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -85,7 +99,7 @@ export function PreviewPane() {
             const dataUrl = await toPng(svgElement as unknown as HTMLElement);
             const a = document.createElement("a");
             a.href = dataUrl;
-            a.download = "diagram.png";
+            a.download = getFileName("png");
             a.click();
         } catch (err) {
             console.error("PNG export error:", err);
@@ -107,7 +121,7 @@ export function PreviewPane() {
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
             pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-            pdf.save("diagram.pdf");
+            pdf.save(getFileName("pdf"));
         } catch (err) {
             console.error("PDF export error:", err);
         }
