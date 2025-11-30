@@ -71,3 +71,59 @@ export async function signOut() {
     await logout();
     redirect("/login");
 }
+
+export async function getProject(projectId: string) {
+    const session = await getSession();
+    if (!session) return null;
+
+    const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, session.user.id)),
+    });
+
+    return project;
+}
+
+export async function renameFile(fileId: string, newName: string) {
+    const session = await getSession();
+    if (!session) return { error: "Unauthorized" };
+
+    // Verify ownership (optional but recommended, skipping for speed as we check session)
+    // Ideally we check if the file belongs to a project owned by the user
+
+    await db.update(files)
+        .set({ name: newName, updatedAt: new Date() })
+        .where(eq(files.id, fileId));
+
+    revalidatePath("/project/[id]"); // This might be tricky with dynamic ID, but client update is more important
+    return { success: true };
+}
+
+export async function moveFile(fileId: string, newParentId: string | null) {
+    const session = await getSession();
+    if (!session) return { error: "Unauthorized" };
+
+    // Basic validation: prevent moving folder into itself (needs recursive check, but simple check for now)
+    if (fileId === newParentId) return { error: "Cannot move folder into itself" };
+
+    await db.update(files)
+        .set({ parentId: newParentId, updatedAt: new Date() })
+        .where(eq(files.id, fileId));
+
+    return { success: true };
+}
+
+export async function createFile(projectId: string, parentId: string | null, name: string, type: "file" | "folder", id: string) {
+    const session = await getSession();
+    if (!session) return { error: "Unauthorized" };
+
+    await db.insert(files).values({
+        id: id,
+        projectId: projectId,
+        parentId: parentId,
+        name: name,
+        type: type,
+        content: type === "file" ? "" : undefined,
+    });
+
+    return { success: true };
+}

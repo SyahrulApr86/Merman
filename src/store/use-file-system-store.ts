@@ -15,13 +15,14 @@ export interface FileNode {
 interface FileSystemState {
     files: FileNode[];
     activeFileId: string | null;
-    addFile: (name: string, type: FileType, parentId: string | null) => void;
+    addFile: (name: string, type: FileType, parentId: string | null, id?: string) => void;
     deleteFile: (id: string) => void;
     renameFile: (id: string, newName: string) => void;
     setActiveFile: (id: string) => void;
     toggleFolder: (id: string) => void;
     updateFileContent: (id: string, content: string) => void;
     setFiles: (files: FileNode[]) => void;
+    moveFile: (id: string, newParentId: string | null) => void;
 }
 
 const initialFiles: FileNode[] = [
@@ -35,9 +36,9 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     files: initialFiles,
     activeFileId: null,
 
-    addFile: (name, type, parentId) => {
+    addFile: (name: string, type: FileType, parentId: string | null, id?: string) => {
         const newFile: FileNode = {
-            id: Date.now().toString(),
+            id: id || crypto.randomUUID(),
             name,
             type,
             parentId,
@@ -83,5 +84,11 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
 
     setFiles: (files: FileNode[]) => {
         set({ files });
+    },
+
+    moveFile: (id, newParentId) => {
+        set((state) => ({
+            files: state.files.map((f) => (f.id === id ? { ...f, parentId: newParentId } : f)),
+        }));
     },
 }));

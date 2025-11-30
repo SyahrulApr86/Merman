@@ -1,4 +1,4 @@
-import { getProjectFiles } from "@/app/actions";
+import { getProjectFiles, getProject } from "@/app/actions";
 import { ProjectInitializer } from "@/components/project-initializer";
 import { MainLayout } from "@/components/layout/main-layout";
 import { getSession } from "@/lib/auth";
@@ -10,11 +10,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
     const { id } = await params;
     const files = await getProjectFiles(id);
+    const project = await getProject(id);
+
+    if (!project) redirect("/");
 
     return (
         <>
             <ProjectInitializer files={files} />
-            <MainLayout />
+            <MainLayout projectName={project.name} projectId={id} />
         </>
     );
 }
