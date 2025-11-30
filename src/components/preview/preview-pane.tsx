@@ -17,7 +17,7 @@ mermaid.initialize({
         primaryColor: "#112240",
         primaryTextColor: "#e6f1ff",
         primaryBorderColor: "#64ffda",
-        lineColor: "#64ffda",
+        lineColor: "#ffffff",
         secondaryColor: "#172a45",
         tertiaryColor: "#112240",
     },
@@ -82,7 +82,7 @@ export function PreviewPane() {
         if (!svgElement) return;
 
         try {
-            const dataUrl = await toPng(svgElement as unknown as HTMLElement, { backgroundColor: "#0a192f" });
+            const dataUrl = await toPng(svgElement as unknown as HTMLElement);
             const a = document.createElement("a");
             a.href = dataUrl;
             a.download = "diagram.png";
