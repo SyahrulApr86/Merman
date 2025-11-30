@@ -11,31 +11,52 @@ export function EditorPane() {
     const { activeFileId, updateFileContent, files } = useFileSystemStore();
     const monaco = useMonaco();
     const [saveStatus, setSaveStatus] = React.useState<"saved" | "saving" | "error">("saved");
+    const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+    const lastEditedFileIdRef = React.useRef<string | null>(null);
+    const activeFileIdRef = React.useRef<string | null>(activeFileId);
 
     const activeFile = files.find(f => f.id === activeFileId);
 
-    // Debounce save
+    // Update ref when activeFileId changes
     useEffect(() => {
+        activeFileIdRef.current = activeFileId;
+        setSaveStatus("saved"); // Reset status on file switch
+    }, [activeFileId]);
+
+    const handleEditorChange = (value: string | undefined) => {
+        const newValue = value || "";
+        setCode(newValue);
+
         if (!activeFileId || !activeFile || activeFile.type !== "file") return;
 
-        // Skip if content hasn't changed from what's in the store (initial load)
-        // But wait, the store updates synchronously. We need to check if we need to save to server.
-        // Actually, we can just debounce the server call.
-
         setSaveStatus("saving");
-        const timer = setTimeout(async () => {
+
+        // Only clear timeout if we are editing the SAME file
+        if (lastEditedFileIdRef.current === activeFileId && saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        lastEditedFileIdRef.current = activeFileId;
+
+        const timeoutId = setTimeout(async () => {
             try {
                 const { updateFileContent: updateFileContentAction } = await import("@/app/actions");
-                await updateFileContentAction(activeFileId, code);
-                setSaveStatus("saved");
+                await updateFileContentAction(activeFileId, newValue);
+
+                // Only update status if we are still on the same file
+                if (activeFileIdRef.current === activeFileId) {
+                    setSaveStatus("saved");
+                }
             } catch (error) {
                 console.error("Failed to save:", error);
-                setSaveStatus("error");
+                if (activeFileIdRef.current === activeFileId) {
+                    setSaveStatus("error");
+                }
             }
         }, 1000);
 
-        return () => clearTimeout(timer);
-    }, [code, activeFileId]);
+        saveTimeoutRef.current = timeoutId;
+    };
 
     // Sync local store
     useEffect(() => {
@@ -86,9 +107,9 @@ export function EditorPane() {
                 {activeFile ? (
                     <Editor
                         height="100%"
-                        defaultLanguage="markdown" // Should be dynamic based on file extension? For now mermaid/markdown
+                        defaultLanguage="markdown"
                         value={code}
-                        onChange={(value) => setCode(value || "")}
+                        onChange={handleEditorChange}
                         theme="abyssal"
                         options={{
                             minimap: { enabled: false },
