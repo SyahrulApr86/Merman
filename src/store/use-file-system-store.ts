@@ -21,6 +21,7 @@ interface FileSystemState {
     setActiveFile: (id: string) => void;
     toggleFolder: (id: string) => void;
     updateFileContent: (id: string, content: string) => void;
+    setFiles: (files: FileNode[]) => void;
 }
 
 const initialFiles: FileNode[] = [
@@ -32,7 +33,7 @@ const initialFiles: FileNode[] = [
 
 export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     files: initialFiles,
-    activeFileId: "2",
+    activeFileId: null,
 
     addFile: (name, type, parentId) => {
         const newFile: FileNode = {
@@ -78,5 +79,9 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
         set((state) => ({
             files: state.files.map((f) => (f.id === id ? { ...f, content } : f)),
         }));
+    },
+
+    setFiles: (files: FileNode[]) => {
+        set({ files });
     },
 }));

@@ -70,10 +70,10 @@ export function Sidebar() {
             <div className="p-3 border-b border-border flex items-center justify-between bg-[#112240]">
                 <span className="font-bold text-xs tracking-widest text-muted-foreground">EXPLORER</span>
                 <div className="flex gap-1">
-                    <button className="p-1 hover:bg-white/10 rounded" title="New File" onClick={() => addFile("New File.mmd", "file", "1")}>
+                    <button className="p-1 hover:bg-white/10 rounded" title="New File" onClick={() => addFile("New File.mmd", "file", activeFileId ? (files.find(f => f.id === activeFileId)?.type === "folder" ? activeFileId : files.find(f => f.id === activeFileId)?.parentId || null) : null)}>
                         <FilePlus size={14} />
                     </button>
-                    <button className="p-1 hover:bg-white/10 rounded" title="New Folder" onClick={() => addFile("New Folder", "folder", "1")}>
+                    <button className="p-1 hover:bg-white/10 rounded" title="New Folder" onClick={() => addFile("New Folder", "folder", activeFileId ? (files.find(f => f.id === activeFileId)?.type === "folder" ? activeFileId : files.find(f => f.id === activeFileId)?.parentId || null) : null)}>
                         <FolderPlus size={14} />
                     </button>
                 </div>
