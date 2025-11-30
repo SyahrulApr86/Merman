@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 import { useEditorStore } from "@/store/use-editor-store";
 import { useFileSystemStore } from "@/store/use-file-system-store";
-import { AlertCircle, RefreshCw, Download, Image as ImageIcon, FileText } from "lucide-react";
+import { AlertCircle, RefreshCw, Download, Image as ImageIcon, FileText, ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 
@@ -127,10 +127,61 @@ export function PreviewPane() {
         }
     };
 
+    const zoomIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 3));
+    const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.1));
+    const handleResetZoom = () => setScale(1);
+
+    const startZoomIn = () => {
+        handleZoomIn();
+        zoomIntervalRef.current = setInterval(handleZoomIn, 100);
+    };
+
+    const startZoomOut = () => {
+        handleZoomOut();
+        zoomIntervalRef.current = setInterval(handleZoomOut, 100);
+    };
+
+    const stopZoom = () => {
+        if (zoomIntervalRef.current) {
+            clearInterval(zoomIntervalRef.current);
+            zoomIntervalRef.current = null;
+        }
+    };
+
     return (
         <div className="h-full w-full bg-background flex flex-col border-l border-border">
             <div className="h-9 bg-secondary border-b border-border flex items-center px-4 justify-between">
-                <span className="text-xs text-muted-foreground">Preview</span>
+                <div className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground">Preview</span>
+                    <div className="flex items-center gap-1 bg-background/50 rounded-md border border-border p-0.5">
+                        <button
+                            onMouseDown={startZoomOut}
+                            onMouseUp={stopZoom}
+                            onMouseLeave={stopZoom}
+                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                            title="Zoom Out (Hold)"
+                        >
+                            <ZoomOut size={12} className="text-muted-foreground" />
+                        </button>
+                        <span className="text-[10px] font-mono w-8 text-center text-muted-foreground">
+                            {Math.round(scale * 100)}%
+                        </span>
+                        <button
+                            onMouseDown={startZoomIn}
+                            onMouseUp={stopZoom}
+                            onMouseLeave={stopZoom}
+                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                            title="Zoom In (Hold)"
+                        >
+                            <ZoomIn size={12} className="text-muted-foreground" />
+                        </button>
+                        <button onClick={handleResetZoom} className="p-1 hover:bg-white/10 rounded transition-colors" title="Reset Zoom">
+                            <Maximize size={12} className="text-muted-foreground" />
+                        </button>
+                    </div>
+                </div>
                 <div className="flex items-center gap-1">
                     <button onClick={handleExportSvg} className="p-1 hover:bg-white/10 rounded transition-colors" title="Export SVG">
                         <Download size={14} className="text-muted-foreground" />
@@ -149,7 +200,7 @@ export function PreviewPane() {
             </div>
             <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-[#0a192f] relative">
                 {error && (
-                    <div className="absolute top-4 left-4 right-4 bg-destructive/10 border border-destructive text-destructive p-3 rounded text-sm flex items-start gap-2">
+                    <div className="absolute top-4 left-4 right-4 bg-destructive/10 border border-destructive text-destructive p-3 rounded text-sm flex items-start gap-2 z-10">
                         <AlertCircle size={16} className="mt-0.5 shrink-0" />
                         <pre className="whitespace-pre-wrap font-mono text-xs">{error}</pre>
                     </div>
@@ -157,7 +208,12 @@ export function PreviewPane() {
 
                 <div
                     ref={containerRef}
-                    className="w-full h-full flex items-center justify-center"
+                    className="flex items-center justify-center transition-transform duration-200 ease-out origin-center"
+                    style={{
+                        transform: `scale(${scale})`,
+                        minWidth: "100%",
+                        minHeight: "100%"
+                    }}
                     dangerouslySetInnerHTML={{ __html: svg }}
                 />
             </div>
