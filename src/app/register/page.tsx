@@ -3,24 +3,24 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToastStore } from "@/store/use-toast-store";
 
 export default function RegisterPage() {
     const router = useRouter();
+    const addToast = useToastStore((state) => state.addToast);
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         if (password !== confirmPassword) {
-            setError("Passwords do not match");
+            addToast("error", "Passwords do not match");
             setLoading(false);
             return;
         }
@@ -38,9 +38,10 @@ export default function RegisterPage() {
                 throw new Error(data.error || "Registration failed");
             }
 
-            router.push("/");
+            addToast("success", "Account created successfully! Redirecting...");
+            setTimeout(() => router.push("/"), 500);
         } catch (err: any) {
-            setError(err.message);
+            addToast("error", err.message || "Registration failed");
         } finally {
             setLoading(false);
         }
@@ -50,12 +51,6 @@ export default function RegisterPage() {
         <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
             <div className="w-full max-w-md bg-secondary p-8 rounded-lg border border-border shadow-xl">
                 <h1 className="text-2xl font-bold mb-6 text-center text-primary">Create Account</h1>
-
-                {error && (
-                    <div className="mb-4 p-3 bg-destructive/10 border border-destructive text-destructive text-sm rounded">
-                        {error}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

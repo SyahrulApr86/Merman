@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { ToastContainer } from "@/components/ui/toast-container";
 
 const ibmSans = IBM_Plex_Sans({
   variable: "--font-ibm-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
       >
         {children}
+        <ToastContainer />
       </body>
     </html>
   );
