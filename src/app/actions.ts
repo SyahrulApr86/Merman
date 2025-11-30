@@ -164,3 +164,14 @@ export async function createFile(projectId: string, parentId: string | null, nam
 
     return { success: true };
 }
+
+export async function updateFileContent(fileId: string, content: string) {
+    const session = await getSession();
+    if (!session) return { error: "Unauthorized" };
+
+    await db.update(files)
+        .set({ content: content, updatedAt: new Date() })
+        .where(eq(files.id, fileId));
+
+    return { success: true };
+}
