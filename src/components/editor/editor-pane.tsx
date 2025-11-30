@@ -5,6 +5,7 @@ import Editor, { useMonaco } from "@monaco-editor/react";
 import { useEditorStore } from "@/store/use-editor-store";
 import { useFileSystemStore } from "@/store/use-file-system-store";
 import { cn } from "@/lib/utils";
+import { TabBar } from "./tab-bar";
 
 export function EditorPane() {
     const { code, setCode } = useEditorStore();
@@ -15,19 +16,43 @@ export function EditorPane() {
     const lastEditedFileIdRef = React.useRef<string | null>(null);
     const activeFileIdRef = React.useRef<string | null>(activeFileId);
 
+    // Use a ref to access files without triggering re-renders/effects
+    const filesRef = React.useRef(files);
+
+    // Keep filesRef in sync
+    useEffect(() => {
+        filesRef.current = files;
+    }, [files]);
+
     const activeFile = files.find(f => f.id === activeFileId);
 
-    // Update ref when activeFileId changes
+    // Update ref when activeFileId changes and load content
     useEffect(() => {
         activeFileIdRef.current = activeFileId;
         setSaveStatus("saved"); // Reset status on file switch
-    }, [activeFileId]);
+
+        // Sync editor content with the new active file
+        // We use filesRef to avoid depending on 'files' or 'activeFile' which change on every edit
+        if (activeFileId) {
+            const file = filesRef.current.find(f => f.id === activeFileId);
+            if (file && file.type === "file") {
+                // Only update if content is different to avoid cursor jumps or loops
+                // But since this effect only runs on activeFileId change, it's safer
+                setCode(file.content || "");
+            }
+        }
+    }, [activeFileId, setCode]);
 
     const handleEditorChange = (value: string | undefined) => {
         const newValue = value || "";
         setCode(newValue);
 
-        if (!activeFileId || !activeFile || activeFile.type !== "file") return;
+        if (!activeFileId) return;
+
+        // We need to check if the current active file is actually a file type
+        // We can use the ref or the prop, but ref is safer inside callbacks if props are stale
+        const currentFile = filesRef.current.find(f => f.id === activeFileId);
+        if (!currentFile || currentFile.type !== "file") return;
 
         setSaveStatus("saving");
 
@@ -60,7 +85,7 @@ export function EditorPane() {
 
     // Sync local store
     useEffect(() => {
-        if (activeFileId && code) {
+        if (activeFileId && code !== undefined) {
             updateFileContent(activeFileId, code);
         }
     }, [code, activeFileId, updateFileContent]);
@@ -86,7 +111,8 @@ export function EditorPane() {
 
     return (
         <div className="h-full w-full bg-background flex flex-col">
-            <div className="h-9 bg-secondary border-b border-border flex items-center px-4 justify-between">
+            <TabBar />
+            <div className="h-9 bg-secondary border-b border-border flex items-center px-4 justify-between shrink-0">
                 <span className="text-xs text-muted-foreground">
                     {activeFile ? activeFile.name : "No file open"}
                 </span>

@@ -15,10 +15,12 @@ export interface FileNode {
 interface FileSystemState {
     files: FileNode[];
     activeFileId: string | null;
+    openFileIds: string[];
     addFile: (name: string, type: FileType, parentId: string | null, id?: string) => void;
     deleteFile: (id: string) => void;
     renameFile: (id: string, newName: string) => void;
     setActiveFile: (id: string) => void;
+    closeFile: (id: string) => void;
     toggleFolder: (id: string) => void;
     updateFileContent: (id: string, content: string) => void;
     setFiles: (files: FileNode[]) => void;
@@ -35,6 +37,7 @@ const initialFiles: FileNode[] = [
 export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     files: initialFiles,
     activeFileId: null,
+    openFileIds: [],
 
     addFile: (name: string, type: FileType, parentId: string | null, id?: string) => {
         const newFile: FileNode = {
@@ -49,7 +52,20 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     },
 
     deleteFile: (id) => {
-        set((state) => ({ files: state.files.filter((f) => f.id !== id) }));
+        set((state) => {
+            const newOpenFileIds = state.openFileIds.filter(fid => fid !== id);
+            let newActiveFileId = state.activeFileId;
+
+            if (state.activeFileId === id) {
+                newActiveFileId = newOpenFileIds.length > 0 ? newOpenFileIds[newOpenFileIds.length - 1] : null;
+            }
+
+            return {
+                files: state.files.filter((f) => f.id !== id),
+                openFileIds: newOpenFileIds,
+                activeFileId: newActiveFileId
+            };
+        });
     },
 
     renameFile: (id, newName) => {
@@ -59,15 +75,30 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     },
 
     setActiveFile: (id) => {
-        set({ activeFileId: id });
-        // Also update editor content
-        const file = get().files.find((f) => f.id === id);
-        if (file && file.type === "file") {
-            // We need to sync with editor store, but this store shouldn't depend on editor store directly?
-            // Or we can just let the component handle the sync.
-            // Better: The editor store should subscribe to this or vice versa.
-            // For now, I'll leave it to the component to sync.
-        }
+        set((state) => {
+            const isOpen = state.openFileIds.includes(id);
+            return {
+                activeFileId: id,
+                openFileIds: isOpen ? state.openFileIds : [...state.openFileIds, id]
+            };
+        });
+    },
+
+    closeFile: (id) => {
+        set((state) => {
+            const newOpenFileIds = state.openFileIds.filter(fid => fid !== id);
+            let newActiveFileId = state.activeFileId;
+
+            if (state.activeFileId === id) {
+                // If closing active file, switch to the last one in the list, or null if empty
+                newActiveFileId = newOpenFileIds.length > 0 ? newOpenFileIds[newOpenFileIds.length - 1] : null;
+            }
+
+            return {
+                openFileIds: newOpenFileIds,
+                activeFileId: newActiveFileId
+            };
+        });
     },
 
     toggleFolder: (id) => {
@@ -83,7 +114,7 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     },
 
     setFiles: (files: FileNode[]) => {
-        set({ files });
+        set({ files, openFileIds: [], activeFileId: null });
     },
 
     moveFile: (id, newParentId) => {
