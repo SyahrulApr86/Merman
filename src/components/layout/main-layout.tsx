@@ -62,7 +62,9 @@ export function MainLayout({ projectName, projectId }: { projectName?: string; p
             {/* Status Bar */}
             <div className="h-6 bg-primary text-primary-foreground text-xs flex items-center px-4 justify-between shrink-0">
                 <span>Ready</span>
-                <span>Merman IDE</span>
+                <span>
+                    MERMAN<span className="text-white">_IDE</span>
+                </span>
             </div>
         </div>
     );

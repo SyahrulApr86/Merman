@@ -16,7 +16,7 @@ const ibmMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Merman IDE",
+  title: "MERMAN_IDE",
   description: "A fullstack Mermaid.js IDE",
 };
 

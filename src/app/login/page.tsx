@@ -39,9 +39,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4 font-mono">
             <div className="w-full max-w-md bg-secondary p-8 rounded-lg border border-border shadow-xl">
-                <h1 className="text-2xl font-bold mb-6 text-center text-primary">Merman IDE Login</h1>
+                <h1 className="text-2xl font-bold mb-6 text-center text-primary">
+                    MERMAN<span className="text-white">_IDE</span> Login
+                </h1>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
