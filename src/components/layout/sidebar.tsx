@@ -163,8 +163,8 @@ export function Sidebar({ projectId }: { projectId: string }) {
     // Handle drop on empty area (root)
     const handleRootDrop = async (e: React.DragEvent) => {
         e.preventDefault();
-        // Only handle if not dropped on a child
-        if (e.target !== e.currentTarget) return;
+        // Remove strict check to allow bubbling from empty areas
+        // if (e.target !== e.currentTarget) return;
 
         const fileId = e.dataTransfer.getData("fileId");
         if (!fileId) return;
