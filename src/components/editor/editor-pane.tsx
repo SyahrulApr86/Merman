@@ -6,12 +6,15 @@ import { useEditorStore } from "@/store/use-editor-store";
 import { useFileSystemStore } from "@/store/use-file-system-store";
 import { cn } from "@/lib/utils";
 import { TabBar } from "./tab-bar";
+import { TemplateModal } from "./template-modal";
+import { LayoutTemplate } from "lucide-react";
 
 export function EditorPane() {
     const { code, setCode } = useEditorStore();
     const { activeFileId, updateFileContent, files } = useFileSystemStore();
     const monaco = useMonaco();
     const [saveStatus, setSaveStatus] = React.useState<"saved" | "saving" | "error">("saved");
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = React.useState(false);
     const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
     const lastEditedFileIdRef = React.useRef<string | null>(null);
     const activeFileIdRef = React.useRef<string | null>(activeFileId);
@@ -113,9 +116,27 @@ export function EditorPane() {
         <div className="h-full w-full bg-background flex flex-col">
             <TabBar />
             <div className="h-9 bg-secondary border-b border-border flex items-center px-4 justify-between shrink-0">
-                <span className="text-xs text-muted-foreground">
-                    {activeFile ? activeFile.name : "No file open"}
-                </span>
+                <div className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground">
+                        {activeFile ? activeFile.name : "No file open"}
+                    </span>
+                    {activeFile && (
+                        <button
+                            onClick={() => setIsTemplateModalOpen(true)}
+                            disabled={code.trim().length > 0}
+                            className={cn(
+                                "text-xs px-2 py-0.5 rounded border transition-all flex items-center gap-1.5",
+                                code.trim().length > 0
+                                    ? "opacity-50 cursor-not-allowed border-transparent text-muted-foreground"
+                                    : "border-primary/30 text-primary hover:bg-primary/10 hover:border-primary"
+                            )}
+                            title={code.trim().length > 0 ? "Clear editor to use templates" : "Choose a template"}
+                        >
+                            <LayoutTemplate size={12} />
+                            Templates
+                        </button>
+                    )}
+                </div>
                 {activeFile && (
                     <span className={cn(
                         "text-xs transition-colors",
@@ -129,6 +150,15 @@ export function EditorPane() {
                     </span>
                 )}
             </div>
+
+            <TemplateModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                onApply={(templateCode) => {
+                    setCode(templateCode);
+                    setIsTemplateModalOpen(false);
+                }}
+            />
             <div className="flex-1 overflow-hidden">
                 {activeFile ? (
                     <Editor
