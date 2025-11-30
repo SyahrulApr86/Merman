@@ -175,3 +175,26 @@ export async function updateFileContent(fileId: string, content: string) {
 
     return { success: true };
 }
+
+export async function deleteFile(fileId: string) {
+    const session = await getSession();
+    if (!session) return { error: "Unauthorized" };
+
+    // Recursive delete function
+    async function deleteRecursive(id: string) {
+        // Find children
+        const children = await db.select().from(files).where(eq(files.parentId, id));
+
+        for (const child of children) {
+            await deleteRecursive(child.id);
+        }
+
+        // Delete self
+        await db.delete(files).where(eq(files.id, id));
+    }
+
+    await deleteRecursive(fileId);
+
+    revalidatePath("/project/[id]");
+    return { success: true };
+}
