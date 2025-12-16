@@ -1,0 +1,49 @@
+# WebSocket Server Dockerfile
+FROM node:20-alpine AS base
+
+# Install dependencies
+FROM base AS deps
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --only=production
+
+# Build the server
+FROM base AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY tsconfig.server.json ./
+COPY server ./server
+COPY src/lib/minio.ts ./src/lib/minio.ts
+COPY src/lib/redis.ts ./src/lib/redis.ts
+COPY src/db ./src/db
+
+# Build TypeScript
+RUN npm run build:ws
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 websocket
+
+# Copy necessary files
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY package.json ./
+
+USER websocket
+
+EXPOSE 3001
+
+ENV PORT=3001
+ENV WS_PORT=3001
+
+CMD ["node", "dist/server/index.js"]
