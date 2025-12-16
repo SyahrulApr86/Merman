@@ -135,8 +135,8 @@ export async function listFiles(
             if (obj.name) {
                 files.push({
                     name: obj.name,
-                    size: obj.size,
-                    lastModified: obj.lastModified,
+                    size: obj.size || 0,
+                    lastModified: obj.lastModified || new Date(),
                 });
             }
         });
