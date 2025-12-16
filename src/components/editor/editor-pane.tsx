@@ -7,7 +7,7 @@ import { useFileSystemStore } from "@/store/use-file-system-store";
 import { cn } from "@/lib/utils";
 import { TabBar } from "./tab-bar";
 import { TemplateModal } from "./template-modal";
-import { LayoutTemplate, Wifi, WifiOff, History, Loader2 } from "lucide-react";
+import { LayoutTemplate, Wifi, WifiOff, History, Loader2, Save } from "lucide-react";
 import { useRealtimeEditor, useFileUpdates } from "@/websocket";
 import { useParams } from "next/navigation";
 
@@ -168,6 +168,33 @@ export function EditorPane() {
         [activeFileId, setCode, updateFileContent, isConnected, projectId, wsUpdateFile]
     );
 
+    // Handle manual version creation
+    const handleSaveVersion = useCallback(async () => {
+        if (!activeFileId || !projectId || !isConnected) return;
+        
+        try {
+            setSaveStatus("saving");
+            await wsUpdateFile({
+                fileId: activeFileId,
+                content: code,
+                projectId,
+                createVersion: true,
+            });
+            setSaveStatus("saved");
+            
+            // Show success momentarily
+            setTimeout(() => {
+                setSaveStatus(prev => prev === "saved" ? "idle" : prev);
+            }, 2000);
+            
+            // If history is open, it will auto-update if we add a refresh mechanism later
+            // For now user can toggle history to refresh
+        } catch (error) {
+            console.error("Failed to create version:", error);
+            setSaveStatus("error");
+        }
+    }, [activeFileId, projectId, isConnected, code, wsUpdateFile]);
+
     // Monaco theme setup
     useEffect(() => {
         if (monaco) {
@@ -212,18 +239,23 @@ export function EditorPane() {
                     {/* Connection status indicator */}
                     <div
                         className={cn(
-                            "flex items-center gap-1.5 text-xs",
-                            isConnected ? "text-green-500" : "text-muted-foreground"
+                            "flex items-center gap-1.5 text-xs transition-colors",
+                            !isConnected && "text-muted-foreground",
+                            isConnected && saveStatus === "error" ? "text-red-500" : "text-green-500"
                         )}
                         title={
                             isConnected
-                                ? "Real-time sync enabled (WebSocket)"
+                                ? "Real-time sync enabled"
                                 : `Connection: ${connectionStatus}`
                         }
                     >
-                        {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                        {!isConnected ? (
+                            <WifiOff size={12} />
+                        ) : (
+                            <Wifi size={12} />
+                        )}
                         <span className="hidden sm:inline">
-                            {isConnected ? "Live" : "Offline"}
+                            {!isConnected ? "Offline" : (saveStatus === "error" ? "Sync Error" : "Live")}
                         </span>
                     </div>
 
@@ -252,6 +284,21 @@ export function EditorPane() {
                                 Templates
                             </button>
 
+                            {/* Save Version Button */}
+                            {isConnected && (
+                                <button
+                                    onClick={handleSaveVersion}
+                                    className={cn(
+                                        "text-xs px-2 py-0.5 rounded border transition-all flex items-center gap-1.5",
+                                        "border-border text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                    )}
+                                    title="Save new version (Snapshot)"
+                                >
+                                    <Save size={12} />
+                                    Save Version
+                                </button>
+                            )}
+
                             {/* Version History Button */}
                             {isConnected && (
                                 <button
@@ -279,8 +326,8 @@ export function EditorPane() {
                         </span>
                     )}
 
-                    {/* Save status */}
-                    {activeFile && statusDisplay && (
+                    {/* Save status (Offline only) */}
+                    {!isConnected && activeFile && statusDisplay && (
                         <span className={cn("text-xs transition-colors", statusDisplay.color)}>
                             {statusDisplay.text}
                         </span>

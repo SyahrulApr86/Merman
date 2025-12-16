@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { wsClient } from './client';
+import { getSessionToken } from '@/app/actions';
 import type {
     ConnectionStatus,
     FileUpdatePayload,
@@ -192,24 +193,18 @@ export function useFileUpdates(callback: (event: FileUpdatedEvent) => void) {
         wsClient.on('file:updated', handler);
 
         return () => {
-            wsClient.off('file:updated', handler);
+            wsClient.off('file:updated', handler as any);
         };
     }, [callback]);
 }
 
-// Hook for getting session token from cookie
 export function useSessionToken(): string | null {
     const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        // Extract session token from cookies
-        const cookies = document.cookie.split(';');
-        const sessionCookie = cookies.find((c) => c.trim().startsWith('session='));
-
-        if (sessionCookie) {
-            const tokenValue = sessionCookie.split('=')[1];
-            setToken(tokenValue);
-        }
+        getSessionToken().then((t) => {
+            if (t) setToken(t);
+        });
     }, []);
 
     return token;

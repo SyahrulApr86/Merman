@@ -1,6 +1,23 @@
 version: '3.8'
 
+# Full Stack - untuk production atau testing full deployment
+# Jalankan dengan: docker-compose up -d
+#
+# Services:
+#   - PostgreSQL (port 5439)
+#   - Redis (port 6379)
+#   - MinIO (port 9000, console 9001)
+#   - Next.js App (port 3000)
+#   - WebSocket Server (port 3001)
+#
+# Untuk development (infra only):
+#   docker-compose -f docker-compose.infra.yml up -d
+#   npm run dev:all
+
 services:
+  # ============================================
+  # Application Services
+  # ============================================
   app:
     container_name: merman-app
     build:
@@ -14,15 +31,20 @@ services:
       - REDIS_URL=redis://redis:6379
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=merman
-      - MINIO_SECRET_KEY=merman_minio_password
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-merman}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-merman_minio_password}
       - MINIO_USE_SSL=false
-      - JWT_SECRET=changeme_in_production
+      - MINIO_BUCKET_FILES=${MINIO_BUCKET_FILES:-merman-files}
+      - MINIO_BUCKET_EXPORTS=${MINIO_BUCKET_EXPORTS:-merman-exports}
+      - JWT_SECRET=${JWT_SECRET:-changeme_in_production}
       - NEXT_PUBLIC_WS_URL=http://localhost:3001
     depends_on:
-      - db
-      - redis
-      - minio
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     networks:
       - merman-network
 
@@ -39,19 +61,27 @@ services:
       - REDIS_URL=redis://redis:6379
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=merman
-      - MINIO_SECRET_KEY=merman_minio_password
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-merman}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-merman_minio_password}
       - MINIO_USE_SSL=false
-      - JWT_SECRET=changeme_in_production
+      - MINIO_BUCKET_FILES=${MINIO_BUCKET_FILES:-merman-files}
+      - MINIO_BUCKET_EXPORTS=${MINIO_BUCKET_EXPORTS:-merman-exports}
+      - JWT_SECRET=${JWT_SECRET:-changeme_in_production}
       - WS_PORT=3001
       - WS_CORS_ORIGIN=http://localhost:3000
     depends_on:
-      - db
-      - redis
-      - minio
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     networks:
       - merman-network
 
+  # ============================================
+  # Infrastructure Services
+  # ============================================
   db:
     image: postgres:15-alpine
     container_name: merman-db
@@ -96,8 +126,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: merman
-      MINIO_ROOT_PASSWORD: merman_minio_password
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-merman}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-merman_minio_password}
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
@@ -105,10 +135,44 @@ services:
     networks:
       - merman-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================
+  # Init Container (creates buckets on first run)
+  # ============================================
+  minio-init:
+    image: minio/mc:latest
+    container_name: merman-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-merman}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-merman_minio_password}
+      MINIO_BUCKET_FILES: ${MINIO_BUCKET_FILES:-merman-files}
+      MINIO_BUCKET_EXPORTS: ${MINIO_BUCKET_EXPORTS:-merman-exports}
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      echo '🚀 Initializing MinIO buckets...';
+      sleep 3;
+
+      mc alias set merman http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+
+      mc mb --ignore-existing merman/$${MINIO_BUCKET_FILES};
+      mc mb --ignore-existing merman/$${MINIO_BUCKET_EXPORTS};
+      mc anonymous set download merman/$${MINIO_BUCKET_EXPORTS};
+
+      echo '';
+      echo '✅ MinIO buckets ready:';
+      mc ls merman;
+      "
+    networks:
+      - merman-network
 
 networks:
   merman-network:

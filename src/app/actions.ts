@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { eq, and, desc, ne, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { FileNode } from "@/store/use-file-system-store";
 
 // MinIO imports - lazy loaded to avoid issues in edge runtime
@@ -385,4 +386,10 @@ export async function migrateFileToMinIO(fileId: string) {
         console.error("Migration failed:", error);
         return { error: "Migration failed" };
     }
+}
+
+export async function getSessionToken() {
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session")?.value;
+    return session || null;
 }

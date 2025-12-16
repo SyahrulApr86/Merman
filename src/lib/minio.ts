@@ -14,10 +14,10 @@ export const minioClient = new Client({
     secretKey: MINIO_SECRET_KEY,
 });
 
-// Bucket names
+// Bucket names (configurable via environment variables)
 export const BUCKETS = {
-    FILES: 'merman-files',
-    EXPORTS: 'merman-exports',
+    FILES: process.env.MINIO_BUCKET_FILES || 'merman-files',
+    EXPORTS: process.env.MINIO_BUCKET_EXPORTS || 'merman-exports',
 } as const;
 
 // Initialize buckets
