@@ -10,6 +10,7 @@ import type {
     FileLoadResponse,
     FileVersionsResponse,
     FileRestoreResponse,
+    FileVersionContentResponse,
     FileUpdatedEvent,
 } from './types';
 
@@ -151,6 +152,15 @@ export function useWebSocketFile(projectId: string | null) {
         return wsClient.getVersions(fileId);
     }, []);
 
+    // Get version content
+    const getVersionContent = useCallback(async (versionId: string): Promise<FileVersionContentResponse> => {
+        if (!wsClient.isConnected) {
+            throw new Error('WebSocket not connected');
+        }
+
+        return wsClient.getVersionContent(versionId);
+    }, []);
+
     // Restore file version
     const restoreVersion = useCallback(
         async (fileId: string, versionId: string): Promise<FileRestoreResponse> => {
@@ -178,6 +188,7 @@ export function useWebSocketFile(projectId: string | null) {
         updateFile,
         loadFile,
         getVersions,
+        getVersionContent,
         restoreVersion,
         deleteFile,
     };
@@ -220,6 +231,7 @@ export function useRealtimeEditor(projectId: string | null) {
         updateFile,
         loadFile,
         getVersions,
+        getVersionContent,
         restoreVersion,
         deleteFile,
     } = useWebSocketFile(projectId);
@@ -236,6 +248,7 @@ export function useRealtimeEditor(projectId: string | null) {
         updateFile,
         loadFile,
         getVersions,
+        getVersionContent,
         restoreVersion,
         deleteFile,
 

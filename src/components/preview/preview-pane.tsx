@@ -1,28 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import mermaid from "mermaid";
 import { useEditorStore } from "@/store/use-editor-store";
 import { useFileSystemStore } from "@/store/use-file-system-store";
 import { AlertCircle, RefreshCw, Download, Image as ImageIcon, FileText, ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 
-mermaid.initialize({
-    startOnLoad: false,
-    theme: "dark",
-    securityLevel: "loose",
-    themeVariables: {
-        darkMode: true,
-        background: "#0a192f",
-        primaryColor: "#112240",
-        primaryTextColor: "#e6f1ff",
-        primaryBorderColor: "#64ffda",
-        lineColor: "#ffffff",
-        secondaryColor: "#172a45",
-        tertiaryColor: "#112240",
-    },
-});
+import { MermaidRenderer } from "./mermaid-renderer";
 
 export function PreviewPane() {
     const { code } = useEditorStore();
@@ -44,39 +29,11 @@ export function PreviewPane() {
         return `diagram.${extension}`;
     };
 
-    useEffect(() => {
-        const render = async () => {
-            if (!containerRef.current) return;
-
-            try {
-                // Reset error
-                setError(null);
-
-                // Generate a unique ID for the diagram
-                const id = `mermaid-${Date.now()}`;
-
-                // Check if code is valid (basic check)
-                if (!code.trim()) {
-                    setSvg("");
-                    return;
-                }
-
-                // Render
-                const { svg } = await mermaid.render(id, code);
-                setSvg(svg);
-            } catch (err) {
-                console.error("Mermaid render error:", err);
-                if (err instanceof Error) {
-                    setError(err.message);
-                } else {
-                    setError("Unknown error occurred");
-                }
-            }
-        };
-
-        const timeout = setTimeout(render, 500); // Debounce
-        return () => clearTimeout(timeout);
-    }, [code]);
+    // SVG state is now handled via callback from MermaidRenderer
+    const handleSvgGenerated = (generatedSvg: string) => {
+        setSvg(generatedSvg);
+        setError(null);
+    };
 
     const handleExportSvg = () => {
         if (!svg) return;
@@ -199,22 +156,10 @@ export function PreviewPane() {
                 </div>
             </div>
             <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-[#0a192f] relative">
-                {error && (
-                    <div className="absolute top-4 left-4 right-4 bg-destructive/10 border border-destructive text-destructive p-3 rounded text-sm flex items-start gap-2 z-10">
-                        <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                        <pre className="whitespace-pre-wrap font-mono text-xs">{error}</pre>
-                    </div>
-                )}
-
-                <div
-                    ref={containerRef}
-                    className="flex items-center justify-center transition-transform duration-200 ease-out origin-center"
-                    style={{
-                        transform: `scale(${scale})`,
-                        minWidth: "100%",
-                        minHeight: "100%"
-                    }}
-                    dangerouslySetInnerHTML={{ __html: svg }}
+                <MermaidRenderer 
+                    code={code} 
+                    scale={scale} 
+                    onSvgGenerated={handleSvgGenerated}
                 />
             </div>
         </div>

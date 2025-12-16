@@ -47,6 +47,13 @@ export interface FileRestoreResponse {
     etag?: string;
 }
 
+export interface FileVersionContentResponse {
+    success?: boolean;
+    error?: string;
+    content?: string;
+    size?: number;
+}
+
 export interface FileUpdatedEvent {
     fileId: string;
     userId: string;
@@ -84,6 +91,7 @@ export interface WebSocketManager {
     updateFile(payload: FileUpdatePayload): Promise<FileUpdateResponse>;
     loadFile(fileId: string): Promise<FileLoadResponse>;
     getVersions(fileId: string): Promise<FileVersionsResponse>;
+    getVersionContent(versionId: string): Promise<FileVersionContentResponse>;
     restoreVersion(fileId: string, versionId: string): Promise<FileRestoreResponse>;
     subscribeToProject(projectId: string): void;
     unsubscribeFromProject(projectId: string): void;

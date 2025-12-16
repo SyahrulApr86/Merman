@@ -276,6 +276,35 @@ export function fileHandler(io: SocketIOServer, socket: Socket): void {
     });
 
     // ==========================================
+    // EVENT: file:version-content - Get version content (Read-only)
+    // ==========================================
+    socket.on('file:version-content', async (payload: { versionId: string }, callback: Callback) => {
+        try {
+            const { versionId } = payload;
+            if (!versionId) return callback({ error: 'Version ID required' });
+
+            const [version] = await db
+                .select()
+                .from(fileVersions)
+                .where(eq(fileVersions.id, versionId));
+
+            if (!version) return callback({ error: 'Version not found' });
+
+            // Load content from MinIO
+            const content = await getFile(BUCKETS.FILES, version.minioPath);
+            
+            callback({
+                success: true,
+                content,
+                size: version.size,
+            });
+        } catch (error) {
+            socketLogger.error({ error }, 'Failed to load version content');
+            callback({ error: 'Failed to load version content' });
+        }
+    });
+
+    // ==========================================
     // EVENT: file:restore - Restore old version
     // ==========================================
     socket.on('file:restore', async (payload: FileRestorePayload, callback: Callback) => {

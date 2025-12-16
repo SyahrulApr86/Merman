@@ -6,6 +6,7 @@ import type {
     FileLoadResponse,
     FileVersionsResponse,
     FileRestoreResponse,
+    FileVersionContentResponse,
 } from './types';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
@@ -115,6 +116,10 @@ class WebSocketClient {
 
     async getVersions(fileId: string): Promise<FileVersionsResponse> {
         return this.emitWithAck('file:versions', { fileId });
+    }
+
+    async getVersionContent(versionId: string): Promise<FileVersionContentResponse> {
+        return this.emitWithAck('file:version-content', { versionId });
     }
 
     async restoreVersion(fileId: string, versionId: string): Promise<FileRestoreResponse> {

@@ -7,6 +7,7 @@ import { useFileSystemStore } from "@/store/use-file-system-store";
 import { cn } from "@/lib/utils";
 import { TabBar } from "./tab-bar";
 import { TemplateModal } from "./template-modal";
+import { VersionDiffModal } from "./version-diff-modal";
 import { LayoutTemplate, Wifi, WifiOff, History, Loader2, Save } from "lucide-react";
 import { useRealtimeEditor, useFileUpdates } from "@/websocket";
 import { useParams } from "next/navigation";
@@ -26,6 +27,15 @@ export function EditorPane() {
     const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [showVersionHistory, setShowVersionHistory] = useState(false);
+    
+    // Diff Modal State
+    const [diffModalOpen, setDiffModalOpen] = useState(false);
+    const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+    const [snapshotCode, setSnapshotCode] = useState("");
+    const [selectedVersionDate, setSelectedVersionDate] = useState<Date>(new Date());
+    const [isRestoringVersion, setIsRestoringVersion] = useState(false);
+
+    console.log("RENDER EditorPane: diffModalOpen =", diffModalOpen);
 
     // Refs
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,6 +50,8 @@ export function EditorPane() {
         connectionStatus,
         updateFile: wsUpdateFile,
         loadFile: wsLoadFile,
+        getVersionContent,
+        restoreVersion,
     } = useRealtimeEditor(projectId || null);
 
     // Keep filesRef in sync
@@ -374,15 +386,59 @@ export function EditorPane() {
                     <div className="w-64 border-l border-border bg-secondary overflow-hidden">
                         <VersionHistoryPanel
                             fileId={activeFile.id}
-                            onRestore={(content) => {
-                                setCode(content);
-                                setShowVersionHistory(false);
+                            onSelectVersion={async (version) => {
+                                console.log("Selecting version:", version.id);
+                                try {
+                                    const response = await getVersionContent(version.id);
+                                    console.log("Version content response:", response);
+                                    
+                                    if (response.success) {
+                                        console.log("✅ Success! Opening modal...");
+                                        setSnapshotCode(response.content || "");
+                                        setSelectedVersionId(version.id);
+                                        setSelectedVersionDate(new Date(version.createdAt));
+                                        setDiffModalOpen(true);
+                                        console.log("setDiffModalOpen(true) called.");
+                                    } else {
+                                        console.error("Failed response:", response);
+                                        // TODO: Show toast error (need toast component)
+                                    }
+                                } catch (error) {
+                                    console.error("Failed to load version content:", error);
+                                }
                             }}
                             onClose={() => setShowVersionHistory(false)}
                         />
                     </div>
                 )}
             </div>
+
+            {/* Version Diff Modal */}
+            <VersionDiffModal
+                isOpen={diffModalOpen}
+                onClose={() => setDiffModalOpen(false)}
+                onRestore={async (versionId) => {
+                    setIsRestoringVersion(true);
+                    try {
+                        const response = await restoreVersion(activeFileId || "", versionId);
+                        if (response.content) {
+                            setCode(response.content);
+                            if (activeFileId) updateFileContent(activeFileId, response.content);
+                            setDiffModalOpen(false);
+                            setShowVersionHistory(false);
+                        }
+                    } catch (error) {
+                        console.error("Failed to restore version:", error);
+                    } finally {
+                        setIsRestoringVersion(false);
+                    }
+                }}
+                currentCode={code}
+                snapshotCode={snapshotCode}
+                versionDate={selectedVersionDate}
+                versionId={selectedVersionId || ""}
+                isRestoring={isRestoringVersion}
+            />
         </div>
     );
 }
@@ -390,20 +446,20 @@ export function EditorPane() {
 // Version History Panel Component (inline for now)
 interface VersionHistoryPanelProps {
     fileId: string;
-    onRestore: (content: string) => void;
+    onSelectVersion: (version: { id: string; createdAt: Date }) => void;
     onClose: () => void;
 }
 
-function VersionHistoryPanel({ fileId, onRestore, onClose }: VersionHistoryPanelProps) {
+function VersionHistoryPanel({ fileId, onSelectVersion, onClose }: VersionHistoryPanelProps) {
     const [versions, setVersions] = useState<Array<{
         id: string;
         size: number;
         createdAt: Date;
         comment: string | null;
     }>>([]);
+    const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isRestoring, setIsRestoring] = useState<string | null>(null);
-    const { getVersions, restoreVersion } = useRealtimeEditor(null);
+    const { getVersions } = useRealtimeEditor(null);
 
     useEffect(() => {
         setIsLoading(true);
@@ -420,20 +476,6 @@ function VersionHistoryPanel({ fileId, onRestore, onClose }: VersionHistoryPanel
                 setIsLoading(false);
             });
     }, [fileId, getVersions]);
-
-    const handleRestore = async (versionId: string) => {
-        setIsRestoring(versionId);
-        try {
-            const response = await restoreVersion(fileId, versionId);
-            if (response.content) {
-                onRestore(response.content);
-            }
-        } catch (error) {
-            console.error("Failed to restore version:", error);
-        } finally {
-            setIsRestoring(null);
-        }
-    };
 
     return (
         <div className="h-full flex flex-col">
@@ -473,17 +515,21 @@ function VersionHistoryPanel({ fileId, onRestore, onClose }: VersionHistoryPanel
                                     <div className="text-xs mt-1 truncate">{version.comment}</div>
                                 )}
                                 <button
-                                    onClick={() => handleRestore(version.id)}
-                                    disabled={isRestoring === version.id}
-                                    className="mt-2 text-xs text-primary hover:underline disabled:opacity-50 flex items-center gap-1"
+                                    onClick={async () => {
+                                        setLoadingVersionId(version.id);
+                                        await onSelectVersion(version);
+                                        setLoadingVersionId(null);
+                                    }}
+                                    disabled={loadingVersionId === version.id}
+                                    className="mt-2 text-xs text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
                                 >
-                                    {isRestoring === version.id ? (
+                                    {loadingVersionId === version.id ? (
                                         <>
                                             <Loader2 size={10} className="animate-spin" />
-                                            Restoring...
+                                            Loading...
                                         </>
                                     ) : (
-                                        "Restore"
+                                        "View & Restore"
                                     )}
                                 </button>
                             </div>
