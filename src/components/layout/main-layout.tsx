@@ -10,7 +10,12 @@ import { Sidebar } from "./sidebar";
 import { EditorPane } from "../editor/editor-pane";
 import { PreviewPane } from "../preview/preview-pane";
 
+import { useState } from "react";
+import { DeleteConfirmationModal } from "../delete-confirmation-modal";
+import { Trash2 } from "lucide-react";
+
 export function MainLayout({ projectName, projectId }: { projectName?: string; projectId: string }) {
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     return (
         <div className="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col">
             {/* Header */}
@@ -31,9 +36,23 @@ export function MainLayout({ projectName, projectId }: { projectName?: string; p
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Right side actions if needed */}
+                    {/* Right side actions */}
+                    <button
+                        onClick={() => setIsDeleteModalOpen(true)}
+                        className="p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors"
+                        title="Delete Project"
+                    >
+                        <Trash2 size={18} />
+                    </button>
                 </div>
             </header>
+
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                projectId={projectId}
+                projectName={projectName || "Untitled Project"}
+            />
 
             <div className="flex-1 overflow-hidden">
                 <PanelGroup direction="horizontal">
