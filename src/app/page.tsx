@@ -1,9 +1,10 @@
-import { getProjects, createProject, signOut } from "@/app/actions";
+import { getProjects, signOut } from "@/app/actions";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, LogOut, Terminal, FolderGit2 } from "lucide-react";
+import { LogOut, Terminal, FolderGit2 } from "lucide-react";
 import * as motion from "framer-motion/client";
+import { CreateProjectCard } from "@/components/create-project-card";
 
 export default async function Home() {
   const session = await getSession();
@@ -43,30 +44,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* New Project Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <form action={createProject} className="h-full">
-                <div className="h-full min-h-[200px] border-2 border-dashed border-border rounded-xl p-6 flex flex-col justify-center items-center gap-4 hover:border-primary hover:bg-white/5 transition-all group cursor-pointer relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="z-10 bg-secondary p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
-                    <Plus className="text-primary w-8 h-8" />
-                  </div>
-                  <div className="z-10 w-full max-w-[200px]">
-                    <input
-                      name="name"
-                      placeholder="New Project Name..."
-                      className="w-full bg-transparent text-center border-b border-border focus:border-primary outline-none py-1 text-sm placeholder:text-muted-foreground/50"
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer">Create</button>
-                </div>
-              </form>
-            </motion.div>
+            <CreateProjectCard />
 
             {/* Project List */}
             {projects.map((project, index) => (

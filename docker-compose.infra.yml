@@ -1,5 +1,5 @@
 # Infrastructure only - untuk development lokal
-# Jalankan dengan: docker-compose -f docker-compose.infra.yml up -d
+# Jalankan dengan: docker compose -f docker-compose.infra.yml up -d
 #
 # Services:
 #   - PostgreSQL (port 5439)
