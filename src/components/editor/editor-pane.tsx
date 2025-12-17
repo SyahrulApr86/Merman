@@ -11,6 +11,7 @@ import { VersionDiffModal } from "./version-diff-modal";
 import { LayoutTemplate, Wifi, WifiOff, History, Loader2, Save } from "lucide-react";
 import { useRealtimeEditor, useFileUpdates } from "@/websocket";
 import { useParams } from "next/navigation";
+import { useTheme } from "next-themes";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type LoadStatus = "idle" | "loading" | "loaded" | "error";
@@ -21,13 +22,14 @@ export function EditorPane() {
     const monaco = useMonaco();
     const params = useParams();
     const projectId = params?.id as string | undefined;
+    const { theme: currentTheme } = useTheme();
 
     // State
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [showVersionHistory, setShowVersionHistory] = useState(false);
-    
+
     // Diff Modal State
     const [diffModalOpen, setDiffModalOpen] = useState(false);
     const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
@@ -183,7 +185,7 @@ export function EditorPane() {
     // Handle manual version creation
     const handleSaveVersion = useCallback(async () => {
         if (!activeFileId || !projectId || !isConnected) return;
-        
+
         try {
             setSaveStatus("saving");
             await wsUpdateFile({
@@ -193,12 +195,12 @@ export function EditorPane() {
                 createVersion: true,
             });
             setSaveStatus("saved");
-            
+
             // Show success momentarily
             setTimeout(() => {
                 setSaveStatus(prev => prev === "saved" ? "idle" : prev);
             }, 2000);
-            
+
             // If history is open, it will auto-update if we add a refresh mechanism later
             // For now user can toggle history to refresh
         } catch (error) {
@@ -210,6 +212,7 @@ export function EditorPane() {
     // Monaco theme setup
     useEffect(() => {
         if (monaco) {
+            // Define custom dark theme "abyssal"
             monaco.editor.defineTheme("abyssal", {
                 base: "vs-dark",
                 inherit: true,
@@ -223,9 +226,17 @@ export function EditorPane() {
                     "editorCursor.foreground": "#64ffda",
                 },
             });
-            monaco.editor.setTheme("abyssal");
+
+            // Switch theme based on system/current preference
+            // 'light' -> vs (standard light)
+            // 'dark' -> abyssal (custom dark)
+            if (currentTheme === "light") {
+                monaco.editor.setTheme("light");
+            } else {
+                monaco.editor.setTheme("abyssal");
+            }
         }
-    }, [monaco]);
+    }, [monaco, currentTheme]);
 
     // Get save status text and color
     const getSaveStatusDisplay = () => {
@@ -364,7 +375,7 @@ export function EditorPane() {
                             defaultLanguage="markdown"
                             value={code}
                             onChange={handleEditorChange}
-                            theme="abyssal"
+                            theme={currentTheme === "light" ? "light" : "abyssal"}
                             options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,
@@ -391,7 +402,7 @@ export function EditorPane() {
                                 try {
                                     const response = await getVersionContent(version.id);
                                     console.log("Version content response:", response);
-                                    
+
                                     if (response.success) {
                                         console.log("✅ Success! Opening modal...");
                                         setSnapshotCode(response.content || "");

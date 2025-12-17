@@ -6,6 +6,8 @@ import Editor from "@monaco-editor/react";
 import { MermaidRenderer } from "@/components/preview/mermaid-renderer";
 import { X, ArrowRight, RotateCcw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
+import { useEditorStore } from "@/store/use-editor-store";
 
 interface VersionDiffModalProps {
     isOpen: boolean;
@@ -29,6 +31,8 @@ export function VersionDiffModal({
     isRestoring = false
 }: VersionDiffModalProps) {
     const [mounted, setMounted] = useState(false);
+    const { theme: currentTheme } = useTheme();
+    const { mermaidTheme } = useEditorStore();
 
     useEffect(() => {
         setMounted(true);
@@ -51,7 +55,7 @@ export function VersionDiffModal({
                             <span>Snapshot ({versionDate.toLocaleString()})</span>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onRestore(versionId)}
@@ -75,14 +79,14 @@ export function VersionDiffModal({
                 </div>
 
                 {/* Content - 4 Columns Grid */}
-                <div className="flex-1 grid grid-cols-4 divide-x divide-border min-h-0 bg-[#0a192f]">
+                <div className="flex-1 grid grid-cols-4 divide-x divide-border min-h-0 bg-background">
                     {/* Column 1: Current Preview */}
                     <div className="flex flex-col min-h-0">
                         <div className="h-8 border-b border-border bg-secondary/30 flex items-center px-3 text-xs font-medium text-muted-foreground">
                             Current Preview
                         </div>
-                        <div className="flex-1 overflow-auto bg-[#0a192f] p-4">
-                            <MermaidRenderer code={currentCode} scale={0.7} />
+                        <div className="flex-1 overflow-auto bg-muted/20 p-4 relative">
+                            <MermaidRenderer code={currentCode} scale={0.7} theme={mermaidTheme} />
                         </div>
                     </div>
 
@@ -96,7 +100,7 @@ export function VersionDiffModal({
                                 height="100%"
                                 defaultLanguage="markdown"
                                 value={currentCode}
-                                theme="abyssal"
+                                theme={currentTheme === "light" ? "light" : "abyssal"}
                                 options={{
                                     readOnly: true,
                                     minimap: { enabled: false },
@@ -121,7 +125,7 @@ export function VersionDiffModal({
                                 height="100%"
                                 defaultLanguage="markdown"
                                 value={snapshotCode}
-                                theme="abyssal"
+                                theme={currentTheme === "light" ? "light" : "abyssal"}
                                 options={{
                                     readOnly: true,
                                     minimap: { enabled: false },
@@ -141,8 +145,8 @@ export function VersionDiffModal({
                         <div className="h-8 border-b border-border bg-secondary/30 flex items-center px-3 text-xs font-medium text-amber-500/80">
                             Snapshot Preview
                         </div>
-                        <div className="flex-1 overflow-auto bg-[#0a192f] p-4">
-                            <MermaidRenderer code={snapshotCode} scale={0.7} />
+                        <div className="flex-1 overflow-auto bg-muted/20 p-4 relative">
+                            <MermaidRenderer code={snapshotCode} scale={0.7} theme={mermaidTheme} />
                         </div>
                     </div>
                 </div>
