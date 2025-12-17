@@ -252,8 +252,8 @@ export function Sidebar({ projectId }: { projectId: string }) {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, file)}
                         className={cn(
-                            "flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 text-sm select-none group border-2 border-transparent",
-                            activeFileId === file.id && "bg-white/10 text-accent border-l-accent",
+                            "flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-muted text-sm select-none group border-2 border-transparent transition-colors",
+                            activeFileId === file.id && "bg-primary/10 text-primary border-l-primary",
                             dragOverId === file.id && "border-primary bg-primary/10"
                         )}
                         style={{ paddingLeft: `${depth * 12 + 8}px` }}
@@ -268,7 +268,7 @@ export function Sidebar({ projectId }: { projectId: string }) {
                             )}
                         </span>
 
-                        <span className="text-accent/80">
+                        <span className="text-primary/80">
                             {file.type === "folder" ? (
                                 file.isOpen ? <FolderOpen size={14} /> : <Folder size={14} />
                             ) : (
@@ -312,13 +312,13 @@ export function Sidebar({ projectId }: { projectId: string }) {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleRootDrop}
             >
-                <div className="p-3 border-b border-border flex items-center justify-between bg-[#112240]">
+                <div className="p-3 border-b border-border flex items-center justify-between bg-card text-card-foreground">
                     <span className="font-bold text-xs tracking-widest text-muted-foreground">EXPLORER</span>
                     <div className="flex gap-1">
-                        <button className="p-1 hover:bg-white/10 rounded" title="New File" onClick={() => handleAddFile("file")}>
+                        <button className="p-1 hover:bg-foreground/10 rounded transition-colors" title="New File" onClick={() => handleAddFile("file")}>
                             <FilePlus size={14} />
                         </button>
-                        <button className="p-1 hover:bg-white/10 rounded" title="New Folder" onClick={() => handleAddFile("folder")}>
+                        <button className="p-1 hover:bg-foreground/10 rounded transition-colors" title="New Folder" onClick={() => handleAddFile("folder")}>
                             <FolderPlus size={14} />
                         </button>
                     </div>

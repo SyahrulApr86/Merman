@@ -22,11 +22,11 @@ export default async function Home() {
               MERMAN<span className="text-foreground">_IDE</span>
             </h1>
             <p className="text-muted-foreground font-mono text-sm">
-              Logged in as <span className="text-accent">@{session.user.username}</span>
+              Logged in as <span className="text-primary font-bold">@{session.user.username}</span>
             </p>
           </div>
           <form action={signOut}>
-            <button className="flex items-center gap-2 text-sm font-medium hover:text-destructive transition-colors px-4 py-2 rounded-md hover:bg-white/5">
+            <button className="flex items-center gap-2 text-sm font-medium hover:text-destructive transition-colors px-4 py-2 rounded-md hover:bg-foreground/5">
               <LogOut size={16} />
               LOGOUT
             </button>

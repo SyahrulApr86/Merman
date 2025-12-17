@@ -13,6 +13,7 @@ import { PreviewPane } from "../preview/preview-pane";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "../delete-confirmation-modal";
 import { Trash2 } from "lucide-react";
+import { ThemeToggle } from "../theme-toggle";
 
 export function MainLayout({ projectName, projectId }: { projectName?: string; projectId: string }) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -37,6 +38,7 @@ export function MainLayout({ projectName, projectId }: { projectName?: string; p
 
                 <div className="flex items-center gap-2">
                     {/* Right side actions */}
+                    <ThemeToggle />
                     <button
                         onClick={() => setIsDeleteModalOpen(true)}
                         className="p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors"

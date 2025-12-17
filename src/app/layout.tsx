@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/toast-container";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const ibmSans = IBM_Plex_Sans({
   variable: "--font-ibm-sans",
@@ -26,12 +27,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
       >
-        {children}
-        <ToastContainer />
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <ToastContainer />
+        </ThemeProvider>
       </body>
     </html>
   );
