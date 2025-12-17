@@ -58,7 +58,17 @@ export function Sidebar({ projectId }: { projectId: string }) {
             }
         }
 
-        const name = type === "file" ? "New File.mmd" : "New Folder";
+        // Generate unique name
+        const baseName = type === "file" ? "New File" : "New Folder";
+        const extension = type === "file" ? ".mmd" : "";
+        let name = `${baseName}${extension}`;
+        let counter = 2;
+
+        const siblings = files.filter(f => f.parentId === parentId);
+        while (siblings.some(f => f.name === name)) {
+            name = `${baseName} ${counter}${extension}`;
+            counter++;
+        }
 
         // Optimistic
         addFile(name, type, parentId, id);

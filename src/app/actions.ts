@@ -269,6 +269,7 @@ export async function createFile(
         });
     }
 
+    revalidatePath("/project/[id]");
     return { success: true };
 }
 

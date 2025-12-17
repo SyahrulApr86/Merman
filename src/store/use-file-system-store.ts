@@ -10,6 +10,7 @@ export interface FileNode {
     parentId: string | null;
     children?: FileNode[]; // For folders (computed or stored flat?)
     isOpen?: boolean; // For folders
+    isOptimistic?: boolean;
 }
 
 interface FileSystemState {
@@ -47,6 +48,7 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
             parentId,
             content: type === "file" ? "" : undefined,
             isOpen: type === "folder" ? true : undefined,
+            isOptimistic: true,
         };
         set((state) => ({ files: [...state.files, newFile] }));
     },
@@ -113,8 +115,21 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
         }));
     },
 
-    setFiles: (files: FileNode[]) => {
-        set({ files, openFileIds: [], activeFileId: null });
+    setFiles: (serverFiles: FileNode[]) => {
+        set((state) => {
+            // Keep optimistic files that are not yet in the server list
+            const optimisticFiles = state.files.filter(f =>
+                f.isOptimistic && !serverFiles.some(sf => sf.id === f.id)
+            );
+
+            return {
+                files: [...serverFiles, ...optimisticFiles],
+                // Don't reset activeFileId if it points to a valid file (optimistic or server)
+                openFileIds: state.openFileIds,
+                // We might want to keep the active file if it still exists
+                activeFileId: state.activeFileId
+            };
+        });
     },
 
     moveFile: (id, newParentId) => {
