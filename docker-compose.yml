@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Full Stack - untuk production atau testing full deployment
 # Jalankan dengan: docker-compose up -d
 #

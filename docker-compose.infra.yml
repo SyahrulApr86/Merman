@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Infrastructure only - untuk development lokal
 # Jalankan dengan: docker-compose -f docker-compose.infra.yml up -d
 #
