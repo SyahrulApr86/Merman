@@ -393,3 +393,42 @@ export async function getSessionToken() {
     const session = cookieStore.get("session")?.value;
     return session || null;
 }
+
+export async function deleteProject(projectId: string) {
+    const session = await getSession();
+    if (!session) return { error: "Unauthorized" };
+
+    // Verify ownership
+    const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, session.user.id)),
+    });
+
+    if (!project) return { error: "Project not found" };
+
+    // Get all files to delete from MinIO
+    const projectFiles = await db.select().from(files).where(eq(files.projectId, projectId));
+
+    // Delete files from MinIO
+    if (projectFiles.length > 0) {
+        try {
+            const { deleteMinioFile, BUCKETS } = await getMinioClient();
+            await Promise.all(
+                projectFiles
+                    .filter(f => f.minioPath)
+                    .map(f => deleteMinioFile(BUCKETS.FILES, f.minioPath!))
+            );
+        } catch (error) {
+            console.error("Failed to delete project files from MinIO:", error);
+            // Continue with DB deletion
+        }
+    }
+
+    // Delete files from DB (cascade should handle this usually, but let's be safe/explicit if cascade isn't set up)
+    await db.delete(files).where(eq(files.projectId, projectId));
+
+    // Delete project
+    await db.delete(projects).where(eq(projects.id, projectId));
+
+    revalidatePath("/");
+    return { success: true };
+}

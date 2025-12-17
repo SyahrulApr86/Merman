@@ -3,8 +3,8 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LogOut, Terminal, FolderGit2 } from "lucide-react";
-import * as motion from "framer-motion/client";
 import { CreateProjectCard } from "@/components/create-project-card";
+import { ProjectCard } from "@/components/project-card";
 
 export default async function Home() {
   const session = await getSession();
@@ -48,38 +48,7 @@ export default async function Home() {
 
             {/* Project List */}
             {projects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 + 0.1 }}
-              >
-                <Link href={`/project/${project.id}`}>
-                  <div className="h-full min-h-[200px] bg-card border border-border rounded-xl p-6 flex flex-col justify-between hover:border-primary/50 hover:shadow-[0_0_30px_-10px_rgba(100,255,218,0.1)] transition-all group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <FolderGit2 size={64} />
-                    </div>
-
-                    <div className="space-y-2 z-10">
-                      <h3 className="text-xl font-bold group-hover:text-primary transition-colors truncate">
-                        {project.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        ID: {project.id.slice(0, 8)}...
-                      </p>
-                    </div>
-
-                    <div className="z-10 pt-8 flex justify-between items-end">
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(project.createdAt!).toLocaleDateString()}
-                      </span>
-                      <span className="text-xs font-medium text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                        OPEN PROJECT &rarr;
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
+              <ProjectCard key={project.id} project={project} index={index} />
             ))}
           </div>
         </main>
