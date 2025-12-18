@@ -66,7 +66,6 @@ export function PreviewPane() {
 
             // High-res export: Scale up the canvas
             const dataUrl = await toPng(element, {
-                backgroundColor: "#ffffff",
                 pixelRatio: 2, // 2x resolution
                 cacheBust: true,
                 skipFonts: true,
