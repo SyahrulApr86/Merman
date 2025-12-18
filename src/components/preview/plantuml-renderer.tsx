@@ -30,7 +30,13 @@ export function PlantUMLRenderer({ code, scale = 1, className, onSvgGenerated }:
                 setError(null);
             }
             try {
-                const encoded = plantumlEncoder.encode(code);
+                // Determine if we should inject transparency
+                // We inject it unless the user has explicitly set a background color?
+                // Actually, just injecting it at the top usually works, but user might want to override it.
+                // Let's prepend it. It's safe.
+                // We add a newline to be safe.
+                const codeWithTransparency = `skinparam backgroundcolor transparent\n${code}`;
+                const encoded = plantumlEncoder.encode(codeWithTransparency);
                 const url = `http://localhost:8080/svg/${encoded}`;
 
                 const response = await fetch(url);
