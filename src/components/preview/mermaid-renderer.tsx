@@ -30,6 +30,8 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
     const [isRendering, setIsRendering] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
+
         // Initialize mermaid with selected theme
         // We use startOnLoad: false so we can manually render
         mermaid.initialize({
@@ -48,39 +50,47 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
 
             // Check if code is valid (basic check)
             if (!code.trim()) {
-                setSvg("");
+                if (isMounted) setSvg("");
                 return;
             }
 
             try {
-                setIsRendering(true);
-                // Reset error
-                setError(null);
+                if (isMounted) {
+                    setIsRendering(true);
+                    setError(null);
+                }
 
                 // Generate a unique ID for the diagram
                 const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
                 // Render
                 const { svg: generatedSvg } = await mermaid.render(id, code);
-                setSvg(generatedSvg);
 
-                if (onSvgGenerated) {
-                    onSvgGenerated(generatedSvg);
+                if (isMounted) {
+                    setSvg(generatedSvg);
+                    if (onSvgGenerated) {
+                        onSvgGenerated(generatedSvg);
+                    }
                 }
             } catch (err) {
                 console.error("Mermaid render error:", err);
-                if (err instanceof Error) {
-                    setError(err.message);
-                } else {
-                    setError("Unknown error occurred");
+                if (isMounted) {
+                    if (err instanceof Error) {
+                        setError(err.message);
+                    } else {
+                        setError("Unknown error occurred");
+                    }
                 }
             } finally {
-                setIsRendering(false);
+                if (isMounted) setIsRendering(false);
             }
         };
 
         const timeout = setTimeout(render, 500); // Debounce
-        return () => clearTimeout(timeout);
+        return () => {
+            isMounted = false;
+            clearTimeout(timeout);
+        };
     }, [code, theme, onSvgGenerated]); // Re-run when theme changes
 
     return (
