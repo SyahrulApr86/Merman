@@ -181,26 +181,28 @@ export function PreviewPane() {
                     </button>
                 </div>
             </div >
-            <div className="flex-1 overflow-auto flex items-center justify-center relative">
-                {!activeFileId ? (
-                    <div className="text-muted-foreground text-sm">No preview available</div>
-                ) : files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
-                    <PlantUMLRenderer
-                        key={`puml-${refreshTrigger}`}
-                        code={code}
-                        scale={scale}
-                        onSvgGenerated={handleSvgGenerated}
-                    />
-                ) : (
-                    <MermaidRenderer
-                        key={`mermaid-${refreshTrigger}`}
-                        code={code}
-                        scale={scale}
-                        theme={mermaidTheme}
-                        onSvgGenerated={handleSvgGenerated}
-                    />
-                )}
-
+            <div className="flex-1 overflow-auto relative bg-background">
+                {/* Scrollable Area Wrapper: Flex only, let children decide centering via m-auto */}
+                <div className="min-w-full min-h-full flex p-8">
+                    {!activeFileId ? (
+                        <div className="m-auto text-muted-foreground text-sm">No preview available</div>
+                    ) : files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
+                        <PlantUMLRenderer
+                            key={`puml-${refreshTrigger}`}
+                            code={code}
+                            scale={scale}
+                            onSvgGenerated={handleSvgGenerated}
+                        />
+                    ) : (
+                        <MermaidRenderer
+                            key={`mermaid-${refreshTrigger}`}
+                            code={code}
+                            scale={scale}
+                            theme={mermaidTheme}
+                            onSvgGenerated={handleSvgGenerated}
+                        />
+                    )}
+                </div>
             </div>
         </div >
     );

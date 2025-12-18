@@ -95,7 +95,7 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
 
     return (
         <div
-            className={`relative w-full h-full flex items-center justify-center transition-colors duration-300 ${className || ""}`}
+            className={`relative min-w-full min-h-full w-fit h-fit flex transition-colors duration-300 ${className || ""}`}
             style={{ backgroundColor: getThemeBackground(theme) }}
         >
             {error && (
@@ -115,7 +115,7 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
                 ref={containerRef}
                 id="diagram-export-target"
                 data-mermaid-container="true"
-                className="flex items-center justify-center transition-transform duration-200 ease-out origin-center"
+                className="flex items-center justify-center transition-transform duration-200 ease-out origin-center m-auto"
                 style={{
                     transform: `scale(${scale})`,
                     minWidth: "100%",

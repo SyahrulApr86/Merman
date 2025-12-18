@@ -70,7 +70,7 @@ export function PlantUMLRenderer({ code, scale = 1, className, onSvgGenerated }:
     }, [code, onSvgGenerated]);
 
     return (
-        <div className={`relative w-full h-full flex items-center justify-center bg-white ${className || ""}`}>
+        <div className={`relative min-w-full min-h-full w-fit h-fit flex bg-transparent [&_svg]:max-w-none ${className || ""}`}>
             {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
                     <Loader2 className="animate-spin text-primary" />
@@ -88,14 +88,12 @@ export function PlantUMLRenderer({ code, scale = 1, className, onSvgGenerated }:
                 <div
                     id="diagram-export-target"
                     data-plantuml-container="true"
-                    className="transition-transform duration-200 ease-out origin-center"
+                    className="transition-transform duration-200 ease-out origin-center flex items-center justify-center m-auto"
                     style={{
                         transform: `scale(${scale})`,
-                        minWidth: "100%",
-                        minHeight: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
+                        // We use min-content or just allow it to flow naturally
+                        width: "max-content",
+                        height: "max-content"
                     }}
                     dangerouslySetInnerHTML={{ __html: svgContent }}
                 />
