@@ -33,7 +33,6 @@
     "html-to-image": "^1.11.13",
     "ioredis": "^5.8.2",
     "jose": "^6.1.2",
-    "jspdf": "^3.0.4",
     "lucide-react": "^0.555.0",
     "mermaid": "^11.12.1",
     "minio": "^8.0.6",

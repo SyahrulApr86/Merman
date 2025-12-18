@@ -5,7 +5,6 @@ import { useEditorStore } from "@/store/use-editor-store";
 import { useFileSystemStore } from "@/store/use-file-system-store";
 import { AlertCircle, RefreshCw, Download, Image as ImageIcon, FileText, ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
 
 import { MermaidRenderer } from "./mermaid-renderer";
 import { PlantUMLRenderer } from "./plantuml-renderer";
@@ -83,33 +82,7 @@ export function PreviewPane() {
         }
     };
 
-    const handleExportPdf = async () => {
-        try {
-            const element = document.getElementById("diagram-export-target");
-            if (!element) {
-                throw new Error("Diagram element not found");
-            }
 
-            const dataUrl = await toPng(element, {
-                backgroundColor: "#ffffff",
-                pixelRatio: 2
-            });
-
-            const pdf = new jsPDF({
-                orientation: "landscape",
-            });
-            const imgProps = pdf.getImageProperties(dataUrl);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-            pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-            pdf.save(getFileName("pdf"));
-        } catch (err) {
-            console.error("PDF export error:", err);
-            window.alert(`Failed to export PDF: ${err instanceof Error ? err.message : "Unknown error"}`);
-            setError("Failed to export PDF");
-        }
-    };
 
     const handleRefresh = () => {
         setRefreshTrigger(prev => prev + 1);
@@ -190,9 +163,6 @@ export function PreviewPane() {
                     </button>
                     <button onClick={handleExportPng} className="p-1 hover:bg-white/10 rounded transition-colors" title="Export PNG">
                         <ImageIcon size={14} className="text-muted-foreground" />
-                    </button>
-                    <button onClick={handleExportPdf} className="p-1 hover:bg-white/10 rounded transition-colors" title="Export PDF">
-                        <FileText size={14} className="text-muted-foreground" />
                     </button>
                     <div className="w-px h-4 bg-border mx-1" />
                     <button onClick={handleRefresh} className="p-1 hover:bg-white/10 rounded transition-colors" title="Refresh">
