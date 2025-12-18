@@ -69,6 +69,7 @@ export function PreviewPane() {
                 backgroundColor: "#ffffff",
                 pixelRatio: 2, // 2x resolution
                 cacheBust: true,
+                skipFonts: true,
             });
 
             const a = document.createElement("a");
