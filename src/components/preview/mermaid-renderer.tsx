@@ -38,6 +38,16 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
             startOnLoad: false,
             theme: theme as any,
             securityLevel: "strict",
+            flowchart: { htmlLabels: true, useMaxWidth: false },
+            sequence: { useMaxWidth: false },
+            gantt: { useMaxWidth: false },
+            journey: { useMaxWidth: false },
+            pie: { useMaxWidth: false },
+            er: { useMaxWidth: false },
+            state: { useMaxWidth: false },
+            class: { useMaxWidth: false },
+            gitGraph: { useMaxWidth: false },
+            mindmap: { useMaxWidth: false },
             // Clean up theme variables if switching away from custom/dark
             themeVariables: theme === "base" ? {
                 // Example base tweaks if needed, otherwise empty
@@ -115,11 +125,13 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
                 ref={containerRef}
                 id="diagram-export-target"
                 data-mermaid-container="true"
-                className="flex items-center justify-center transition-transform duration-200 ease-out origin-center m-auto"
+                className="flex items-center justify-center origin-top-left m-auto [&_svg]:!max-w-none [&_svg]:!h-auto"
                 style={{
-                    transform: `scale(${scale})`,
-                    minWidth: "100%",
-                    minHeight: "100%"
+                    // Use CSS zoom for scaling (works best for scrollable content)
+                    // @ts-ignore
+                    zoom: scale,
+                    width: "max-content",
+                    height: "max-content"
                 }}
                 dangerouslySetInnerHTML={{ __html: svg }}
             />
