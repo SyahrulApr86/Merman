@@ -8,6 +8,7 @@ import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 
 import { MermaidRenderer } from "./mermaid-renderer";
+import { PlantUMLRenderer } from "./plantuml-renderer";
 
 export function PreviewPane() {
     const { code, mermaidTheme, setMermaidTheme } = useEditorStore();
@@ -138,17 +139,20 @@ export function PreviewPane() {
                             <Maximize size={12} className="text-muted-foreground" />
                         </button>
                     </div>
-                    <select
-                        value={mermaidTheme}
-                        onChange={(e) => setMermaidTheme(e.target.value)}
-                        className="h-6 bg-background border border-border rounded text-xs px-2 text-muted-foreground outline-none focus:border-primary"
-                    >
-                        <option value="default">Default</option>
-                        <option value="neutral">Neutral</option>
-                        <option value="dark">Dark</option>
-                        <option value="forest">Forest</option>
-                        <option value="base">Base</option>
-                    </select>
+                    {/* Only show theme selector for Mermaid files */}
+                    {(!activeFileId || files.find(f => f.id === activeFileId)?.name.endsWith(".mmd")) && (
+                        <select
+                            value={mermaidTheme}
+                            onChange={(e) => setMermaidTheme(e.target.value)}
+                            className="h-6 bg-background border border-border rounded text-xs px-2 text-muted-foreground outline-none focus:border-primary"
+                        >
+                            <option value="default">Default</option>
+                            <option value="neutral">Neutral</option>
+                            <option value="dark">Dark</option>
+                            <option value="forest">Forest</option>
+                            <option value="base">Base</option>
+                        </select>
+                    )}
                 </div>
                 <div className="flex items-center gap-1">
                     <button onClick={handleExportSvg} className="p-1 hover:bg-white/10 rounded transition-colors" title="Export SVG">
@@ -165,15 +169,22 @@ export function PreviewPane() {
                         <RefreshCw size={14} className="text-muted-foreground" />
                     </button>
                 </div>
-            </div>
+            </div >
             <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-muted/20 relative">
-                <MermaidRenderer
-                    code={code}
-                    scale={scale}
-                    theme={mermaidTheme}
-                    onSvgGenerated={handleSvgGenerated}
-                />
+                {activeFileId && files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
+                    <PlantUMLRenderer
+                        code={code}
+                        scale={scale}
+                    />
+                ) : (
+                    <MermaidRenderer
+                        code={code}
+                        scale={scale}
+                        theme={mermaidTheme}
+                        onSvgGenerated={handleSvgGenerated}
+                    />
+                )}
             </div>
-        </div>
+        </div >
     );
 }

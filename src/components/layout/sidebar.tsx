@@ -8,7 +8,8 @@ import {
     Plus,
     Trash2,
     FilePlus,
-    FolderPlus
+    FolderPlus,
+    FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFileSystemStore, FileNode } from "@/store/use-file-system-store";
@@ -43,7 +44,7 @@ export function Sidebar({ projectId }: { projectId: string }) {
         }
     };
 
-    const handleAddFile = async (type: "file" | "folder") => {
+    const handleAddFile = async (type: "file" | "folder", ext: string = ".mmd") => {
         const id = crypto.randomUUID();
 
         let parentId: string | null = null;
@@ -59,8 +60,9 @@ export function Sidebar({ projectId }: { projectId: string }) {
         }
 
         // Generate unique name
+        // Generate unique name
         const baseName = type === "file" ? "New File" : "New Folder";
-        const extension = type === "file" ? ".mmd" : "";
+        const extension = type === "file" ? ext : "";
         let name = `${baseName}${extension}`;
         let counter = 2;
 
@@ -315,8 +317,11 @@ export function Sidebar({ projectId }: { projectId: string }) {
                 <div className="p-3 border-b border-border flex items-center justify-between bg-card text-card-foreground">
                     <span className="font-bold text-xs tracking-widest text-muted-foreground">EXPLORER</span>
                     <div className="flex gap-1">
-                        <button className="p-1 hover:bg-foreground/10 rounded transition-colors" title="New File" onClick={() => handleAddFile("file")}>
+                        <button className="p-1 hover:bg-foreground/10 rounded transition-colors" title="New Mermaid Diagram" onClick={() => handleAddFile("file", ".mmd")}>
                             <FilePlus size={14} />
+                        </button>
+                        <button className="p-1 hover:bg-foreground/10 rounded transition-colors" title="New PlantUML Diagram" onClick={() => handleAddFile("file", ".puml")}>
+                            <FileText size={14} />
                         </button>
                         <button className="p-1 hover:bg-foreground/10 rounded transition-colors" title="New Folder" onClick={() => handleAddFile("folder")}>
                             <FolderPlus size={14} />

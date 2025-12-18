@@ -95,7 +95,7 @@ services:
     networks:
       - merman-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U merman -d merman"]
+      test: [ "CMD-SHELL", "pg_isready -U merman -d merman" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -112,10 +112,24 @@ services:
     networks:
       - merman-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    container_name: merman-plantuml
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - merman-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   minio:
     image: minio/minio:latest
@@ -133,7 +147,7 @@ services:
     networks:
       - merman-network
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -155,20 +169,13 @@ services:
       MINIO_BUCKET_EXPORTS: ${MINIO_BUCKET_EXPORTS:-merman-exports}
     entrypoint: /bin/sh
     command: >
-      -c "
-      echo '🚀 Initializing MinIO buckets...';
-      sleep 3;
+      -c " echo '🚀 Initializing MinIO buckets...'; sleep 3;
 
       mc alias set merman http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
 
-      mc mb --ignore-existing merman/$${MINIO_BUCKET_FILES};
-      mc mb --ignore-existing merman/$${MINIO_BUCKET_EXPORTS};
-      mc anonymous set download merman/$${MINIO_BUCKET_EXPORTS};
+      mc mb --ignore-existing merman/$${MINIO_BUCKET_FILES}; mc mb --ignore-existing merman/$${MINIO_BUCKET_EXPORTS}; mc anonymous set download merman/$${MINIO_BUCKET_EXPORTS};
 
-      echo '';
-      echo '✅ MinIO buckets ready:';
-      mc ls merman;
-      "
+      echo ''; echo '✅ MinIO buckets ready:'; mc ls merman; "
     networks:
       - merman-network
 
