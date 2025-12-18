@@ -80,6 +80,7 @@ export function PlantUMLRenderer({ code, scale = 1, className, onSvgGenerated }:
 
             {svgContent ? (
                 <div
+                    id="diagram-export-target"
                     data-plantuml-container="true"
                     className="transition-transform duration-200 ease-out origin-center"
                     style={{

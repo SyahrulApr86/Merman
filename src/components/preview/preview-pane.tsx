@@ -59,56 +59,42 @@ export function PreviewPane() {
     };
 
     const handleExportPng = async () => {
-        if (!containerRef.current) return;
-
-        let element: HTMLElement | null = null;
-
-        // 1. Try finding container by data attributes (Preferred as they wrap the SVG with styles)
-        const plantUmlContainer = containerRef.current.querySelector("[data-plantuml-container='true']") as HTMLElement;
-        const mermaidContainer = containerRef.current.querySelector("[data-mermaid-container='true']") as HTMLElement;
-
-        if (plantUmlContainer) {
-            element = plantUmlContainer;
-        } else if (mermaidContainer) {
-            element = mermaidContainer;
-        } else {
-            // 2. Fallback to raw SVG
-            element = containerRef.current.querySelector("svg") as unknown as HTMLElement;
-        }
-
-        if (!element) return;
-
         try {
-            const dataUrl = await toPng(element, { backgroundColor: "#ffffff" });
+            const element = document.getElementById("diagram-export-target");
+            if (!element) {
+                throw new Error("Diagram element not found");
+            }
+
+            // High-res export: Scale up the canvas
+            const dataUrl = await toPng(element, {
+                backgroundColor: "#ffffff",
+                pixelRatio: 2, // 2x resolution
+                cacheBust: true,
+            });
+
             const a = document.createElement("a");
             a.href = dataUrl;
             a.download = getFileName("png");
             a.click();
         } catch (err) {
             console.error("PNG export error:", err);
+            window.alert(`Failed to export PNG: ${err instanceof Error ? err.message : "Unknown error"}`);
+            setError("Failed to export PNG");
         }
     };
 
     const handleExportPdf = async () => {
-        if (!containerRef.current) return;
-
-        let element: HTMLElement | null = null;
-
-        const plantUmlContainer = containerRef.current.querySelector("[data-plantuml-container='true']") as HTMLElement;
-        const mermaidContainer = containerRef.current.querySelector("[data-mermaid-container='true']") as HTMLElement;
-
-        if (plantUmlContainer) {
-            element = plantUmlContainer;
-        } else if (mermaidContainer) {
-            element = mermaidContainer;
-        } else {
-            element = containerRef.current.querySelector("svg") as unknown as HTMLElement;
-        }
-
-        if (!element) return;
-
         try {
-            const dataUrl = await toPng(element, { backgroundColor: "#ffffff" });
+            const element = document.getElementById("diagram-export-target");
+            if (!element) {
+                throw new Error("Diagram element not found");
+            }
+
+            const dataUrl = await toPng(element, {
+                backgroundColor: "#ffffff",
+                pixelRatio: 2
+            });
+
             const pdf = new jsPDF({
                 orientation: "landscape",
             });
@@ -120,6 +106,8 @@ export function PreviewPane() {
             pdf.save(getFileName("pdf"));
         } catch (err) {
             console.error("PDF export error:", err);
+            window.alert(`Failed to export PDF: ${err instanceof Error ? err.message : "Unknown error"}`);
+            setError("Failed to export PDF");
         }
     };
 
