@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Editor from "@monaco-editor/react";
 import { MermaidRenderer } from "@/components/preview/mermaid-renderer";
+import { PlantUMLRenderer } from "@/components/preview/plantuml-renderer";
 import { X, ArrowRight, RotateCcw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
@@ -36,7 +37,7 @@ export function VersionDiffModal({
 
     useEffect(() => {
         setMounted(true);
-        console.log("VersionDiffModal mounted, isOpen:", isOpen);
+
         return () => setMounted(false);
     }, [isOpen]);
 
@@ -86,7 +87,11 @@ export function VersionDiffModal({
                             Current Preview
                         </div>
                         <div className="flex-1 overflow-auto bg-muted/20 p-4 relative">
-                            <MermaidRenderer code={currentCode} scale={0.7} theme={mermaidTheme} />
+                            {currentCode.trim().startsWith("@startuml") ? (
+                                <PlantUMLRenderer code={currentCode} scale={0.7} />
+                            ) : (
+                                <MermaidRenderer code={currentCode} scale={0.7} theme={mermaidTheme} />
+                            )}
                         </div>
                     </div>
 
@@ -146,7 +151,11 @@ export function VersionDiffModal({
                             Snapshot Preview
                         </div>
                         <div className="flex-1 overflow-auto bg-muted/20 p-4 relative">
-                            <MermaidRenderer code={snapshotCode} scale={0.7} theme={mermaidTheme} />
+                            {snapshotCode.trim().startsWith("@startuml") ? (
+                                <PlantUMLRenderer code={snapshotCode} scale={0.7} />
+                            ) : (
+                                <MermaidRenderer code={snapshotCode} scale={0.7} theme={mermaidTheme} />
+                            )}
                         </div>
                     </div>
                 </div>
