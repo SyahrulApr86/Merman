@@ -398,18 +398,18 @@ export function EditorPane() {
                         <VersionHistoryPanel
                             fileId={activeFile.id}
                             onSelectVersion={async (version) => {
-                                console.log("Selecting version:", version.id);
+
                                 try {
                                     const response = await getVersionContent(version.id);
-                                    console.log("Version content response:", response);
+
 
                                     if (response.success) {
-                                        console.log("✅ Success! Opening modal...");
+
                                         setSnapshotCode(response.content || "");
                                         setSelectedVersionId(version.id);
                                         setSelectedVersionDate(new Date(version.createdAt));
                                         setDiffModalOpen(true);
-                                        console.log("setDiffModalOpen(true) called.");
+
                                     } else {
                                         console.error("Failed response:", response);
                                         // TODO: Show toast error (need toast component)
