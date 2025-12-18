@@ -66,7 +66,15 @@ export function PreviewPane() {
 
             // High-res export: Scale up the canvas
             const dataUrl = await toPng(element, {
-                pixelRatio: 2, // 2x resolution
+                pixelRatio: 3, // Higher quality
+                quality: 1,
+                width: element.scrollWidth,
+                height: element.scrollHeight,
+                style: {
+                    transform: "scale(1)", // Reset zoom to 100% for export
+                    transformOrigin: "center",
+                    margin: "0", // Reset margins to avoid offsets
+                },
                 cacheBust: true,
                 skipFonts: true,
             });
