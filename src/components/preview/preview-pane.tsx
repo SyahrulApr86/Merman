@@ -181,7 +181,7 @@ export function PreviewPane() {
                     </button>
                 </div>
             </div >
-            <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-muted/20 relative">
+            <div className="flex-1 overflow-auto flex items-center justify-center relative">
                 {!activeFileId ? (
                     <div className="text-muted-foreground text-sm">No preview available</div>
                 ) : files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
