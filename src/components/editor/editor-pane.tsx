@@ -37,7 +37,7 @@ export function EditorPane() {
     const [selectedVersionDate, setSelectedVersionDate] = useState<Date>(new Date());
     const [isRestoringVersion, setIsRestoringVersion] = useState(false);
 
-    console.log("RENDER EditorPane: diffModalOpen =", diffModalOpen);
+
 
     // Refs
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
