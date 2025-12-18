@@ -17,6 +17,7 @@ export function PreviewPane() {
     const [error, setError] = useState<string | null>(null);
     const [svg, setSvg] = useState<string>("");
     const [scale, setScale] = useState(1);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     // Clear SVG state when active file changes
     useEffect(() => {
@@ -60,30 +61,25 @@ export function PreviewPane() {
     const handleExportPng = async () => {
         if (!containerRef.current) return;
 
-        // Try getting SVG first
-        let element = containerRef.current.querySelector("svg");
+        let element: HTMLElement | null = null;
 
-        // If no SVG, check if we have a PlantUML container with dangerouslySetInnerHTML
-        if (!element) {
-            const divWithSvg = containerRef.current.querySelector("div[style*='dangerouslySetInnerHTML']");
-            if (divWithSvg) {
-                element = divWithSvg.querySelector("svg");
-            }
-        }
+        // 1. Try finding container by data attributes (Preferred as they wrap the SVG with styles)
+        const plantUmlContainer = containerRef.current.querySelector("[data-plantuml-container='true']") as HTMLElement;
+        const mermaidContainer = containerRef.current.querySelector("[data-mermaid-container='true']") as HTMLElement;
 
-        // If still no element, it might be the container itself if PlantUML rendered direclty
-        if (!element && activeFileId && files.find(f => f.id === activeFileId)?.name.endsWith(".puml")) {
-            // For PlantUML inline SVG, the svg is inside the div
-            const plantUmlContainer = containerRef.current.querySelector(".flex-1 > div > div"); // Rough selector, better to use ID
-            if (plantUmlContainer) {
-                element = plantUmlContainer.querySelector("svg");
-            }
+        if (plantUmlContainer) {
+            element = plantUmlContainer;
+        } else if (mermaidContainer) {
+            element = mermaidContainer;
+        } else {
+            // 2. Fallback to raw SVG
+            element = containerRef.current.querySelector("svg") as unknown as HTMLElement;
         }
 
         if (!element) return;
 
         try {
-            const dataUrl = await toPng(element as unknown as HTMLElement, { backgroundColor: "#ffffff" });
+            const dataUrl = await toPng(element, { backgroundColor: "#ffffff" });
             const a = document.createElement("a");
             a.href = dataUrl;
             a.download = getFileName("png");
@@ -96,21 +92,23 @@ export function PreviewPane() {
     const handleExportPdf = async () => {
         if (!containerRef.current) return;
 
-        // Try getting SVG first
-        let element = containerRef.current.querySelector("svg");
+        let element: HTMLElement | null = null;
 
-        // Fallback checks (same as PNG)
-        if (!element && activeFileId && files.find(f => f.id === activeFileId)?.name.endsWith(".puml")) {
-            const plantUmlContainer = containerRef.current.querySelector(".flex-1 > div > div");
-            if (plantUmlContainer) {
-                element = plantUmlContainer.querySelector("svg");
-            }
+        const plantUmlContainer = containerRef.current.querySelector("[data-plantuml-container='true']") as HTMLElement;
+        const mermaidContainer = containerRef.current.querySelector("[data-mermaid-container='true']") as HTMLElement;
+
+        if (plantUmlContainer) {
+            element = plantUmlContainer;
+        } else if (mermaidContainer) {
+            element = mermaidContainer;
+        } else {
+            element = containerRef.current.querySelector("svg") as unknown as HTMLElement;
         }
 
         if (!element) return;
 
         try {
-            const dataUrl = await toPng(element as unknown as HTMLElement, { backgroundColor: "#ffffff" });
+            const dataUrl = await toPng(element, { backgroundColor: "#ffffff" });
             const pdf = new jsPDF({
                 orientation: "landscape",
             });
@@ -123,6 +121,10 @@ export function PreviewPane() {
         } catch (err) {
             console.error("PDF export error:", err);
         }
+    };
+
+    const handleRefresh = () => {
+        setRefreshTrigger(prev => prev + 1);
     };
 
     const zoomIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -205,7 +207,7 @@ export function PreviewPane() {
                         <FileText size={14} className="text-muted-foreground" />
                     </button>
                     <div className="w-px h-4 bg-border mx-1" />
-                    <button className="p-1 hover:bg-white/10 rounded transition-colors" title="Refresh">
+                    <button onClick={handleRefresh} className="p-1 hover:bg-white/10 rounded transition-colors" title="Refresh">
                         <RefreshCw size={14} className="text-muted-foreground" />
                     </button>
                 </div>
@@ -213,12 +215,14 @@ export function PreviewPane() {
             <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-muted/20 relative">
                 {activeFileId && files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
                     <PlantUMLRenderer
+                        key={`puml-${refreshTrigger}`}
                         code={code}
                         scale={scale}
                         onSvgGenerated={handleSvgGenerated}
                     />
                 ) : (
                     <MermaidRenderer
+                        key={`mermaid-${refreshTrigger}`}
                         code={code}
                         scale={scale}
                         theme={mermaidTheme}

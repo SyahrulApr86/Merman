@@ -113,6 +113,7 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
 
             <div
                 ref={containerRef}
+                data-mermaid-container="true"
                 className="flex items-center justify-center transition-transform duration-200 ease-out origin-center"
                 style={{
                     transform: `scale(${scale})`,
