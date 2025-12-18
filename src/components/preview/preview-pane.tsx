@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useEditorStore } from "@/store/use-editor-store";
 import { useFileSystemStore } from "@/store/use-file-system-store";
 import { AlertCircle, RefreshCw, Download, Image as ImageIcon, FileText, ZoomIn, ZoomOut, Maximize } from "lucide-react";
@@ -37,10 +37,10 @@ export function PreviewPane() {
     };
 
     // SVG state is now handled via callback from MermaidRenderer
-    const handleSvgGenerated = (generatedSvg: string) => {
+    const handleSvgGenerated = useCallback((generatedSvg: string) => {
         setSvg(generatedSvg);
         setError(null);
-    };
+    }, []);
 
     const handleExportSvg = () => {
         // If it's PlantUML (which renders an SVG string now inside a div), we might need to exact it differently
@@ -172,7 +172,9 @@ export function PreviewPane() {
                 </div>
             </div >
             <div className="flex-1 overflow-auto p-8 flex items-center justify-center bg-muted/20 relative">
-                {activeFileId && files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
+                {!activeFileId ? (
+                    <div className="text-muted-foreground text-sm">No preview available</div>
+                ) : files.find(f => f.id === activeFileId)?.name.endsWith(".puml") ? (
                     <PlantUMLRenderer
                         key={`puml-${refreshTrigger}`}
                         code={code}
@@ -188,6 +190,7 @@ export function PreviewPane() {
                         onSvgGenerated={handleSvgGenerated}
                     />
                 )}
+
             </div>
         </div >
     );

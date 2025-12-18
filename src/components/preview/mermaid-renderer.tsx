@@ -37,7 +37,7 @@ export function MermaidRenderer({ code, scale = 1, className, theme = "default",
         mermaid.initialize({
             startOnLoad: false,
             theme: theme as any,
-            securityLevel: "loose",
+            securityLevel: "strict",
             // Clean up theme variables if switching away from custom/dark
             themeVariables: theme === "base" ? {
                 // Example base tweaks if needed, otherwise empty
