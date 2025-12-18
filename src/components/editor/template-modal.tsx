@@ -13,7 +13,20 @@ interface TemplateModalProps {
 }
 
 export function TemplateModal({ isOpen, onClose, onApply }: TemplateModalProps) {
-    const [selectedTemplate, setSelectedTemplate] = useState<Template>(TEMPLATES[0]);
+    const [activeTab, setActiveTab] = useState<"mermaid" | "plantuml">("mermaid");
+
+    // Filter templates based on active tab
+    const filteredTemplates = TEMPLATES.filter(t => t.type === activeTab);
+
+    const [selectedTemplate, setSelectedTemplate] = useState<Template>(filteredTemplates[0] || TEMPLATES[0]);
+
+    // Update selected template when tab changes if current selection is not in the new tab
+    React.useEffect(() => {
+        const firstInTab = TEMPLATES.find(t => t.type === activeTab);
+        if (firstInTab) {
+            setSelectedTemplate(firstInTab);
+        }
+    }, [activeTab]);
 
     if (!isOpen) return null;
 
@@ -42,33 +55,62 @@ export function TemplateModal({ isOpen, onClose, onApply }: TemplateModalProps) 
                 {/* Content */}
                 <div className="flex-1 flex overflow-hidden">
                     {/* Sidebar List */}
-                    <div className="w-1/3 border-r border-border overflow-y-auto p-2 space-y-1 bg-secondary/20">
-                        {TEMPLATES.map((template) => (
+                    <div className="w-1/3 border-r border-border flex flex-col bg-secondary/20">
+                        {/* Tabs */}
+                        <div className="grid grid-cols-2 p-2 gap-2 border-b border-border">
                             <button
-                                key={template.id}
-                                onClick={() => setSelectedTemplate(template)}
+                                onClick={() => setActiveTab("mermaid")}
                                 className={cn(
-                                    "w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-between group",
-                                    selectedTemplate.id === template.id
-                                        ? "bg-primary/10 text-primary border border-primary/20"
+                                    "px-3 py-2 rounded-md text-sm font-medium transition-colors text-center",
+                                    activeTab === "mermaid"
+                                        ? "bg-primary text-primary-foreground shadow-sm"
                                         : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
                                 )}
                             >
-                                <span>{template.name}</span>
-                                <div className="flex gap-2">
-                                    {template.isNew && (
-                                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
-                                            NEW
-                                        </span>
-                                    )}
-                                    {template.isBeta && (
-                                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">
-                                            BETA
-                                        </span>
-                                    )}
-                                </div>
+                                Mermaid
                             </button>
-                        ))}
+                            <button
+                                onClick={() => setActiveTab("plantuml")}
+                                className={cn(
+                                    "px-3 py-2 rounded-md text-sm font-medium transition-colors text-center",
+                                    activeTab === "plantuml"
+                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                        : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                PlantUML
+                            </button>
+                        </div>
+
+                        {/* Template List */}
+                        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                            {filteredTemplates.map((template) => (
+                                <button
+                                    key={template.id}
+                                    onClick={() => setSelectedTemplate(template)}
+                                    className={cn(
+                                        "w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-between group",
+                                        selectedTemplate.id === template.id
+                                            ? "bg-primary/10 text-primary border border-primary/20"
+                                            : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    <span>{template.name}</span>
+                                    <div className="flex gap-2">
+                                        {template.isNew && (
+                                            <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
+                                                NEW
+                                            </span>
+                                        )}
+                                        {template.isBeta && (
+                                            <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">
+                                                BETA
+                                            </span>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Preview Area */}
