@@ -48,7 +48,10 @@ export function PreviewPane() {
         // However, PlantUMLRenderer returns raw SVG string.
         if (!svg) return;
 
-        const blob = new Blob([svg], { type: "image/svg+xml" });
+        // Sanitize SVG: Replace HTML formatted <br> with XML compliant <br/>
+        const sanitizedSvg = svg.replace(/<br>/g, "<br/>");
+
+        const blob = new Blob([sanitizedSvg], { type: "image/svg+xml" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
