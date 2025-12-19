@@ -9,7 +9,7 @@ import type {
     FileVersionContentResponse,
 } from './types';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+const DEFAULT_WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
 const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 class WebSocketClient {
@@ -19,6 +19,24 @@ class WebSocketClient {
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
     private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
+    private url: string = DEFAULT_WS_URL;
+
+    setUrl(url: string) {
+        if (url && url !== this.url) {
+            console.log('Using WebSocket URL from config:', url);
+            this.url = url;
+            // If connected, we might want to reconnect, but usually this is set before connection
+            if (this.isConnected) {
+                this.disconnect();
+                // We don't auto-reconnect here because we need the token. 
+                // The app logic should handle reconnection if needed.
+            }
+        }
+    }
+
+    get currentUrl() {
+        return this.url;
+    }
 
     get status(): ConnectionStatus {
         return this._status;
@@ -47,7 +65,9 @@ class WebSocketClient {
         this.token = token;
         this.setStatus('connecting');
 
-        this.socket = io(WS_URL, {
+        console.log('Connecting to WebSocket:', this.url);
+
+        this.socket = io(this.url, {
             auth: { token },
             transports: ['websocket', 'polling'],
             reconnection: true,
