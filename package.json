@@ -13,6 +13,7 @@
     "start:all": "concurrently \"npm run start\" \"npm run start:ws\"",
     "lint": "eslint",
     "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "infra:up": "docker-compose -f docker-compose.infra.yml up -d",
     "infra:down": "docker-compose -f docker-compose.infra.yml down",
