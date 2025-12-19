@@ -4,8 +4,6 @@ import "./globals.css";
 import { ToastContainer } from "@/components/ui/toast-container";
 import { ThemeProvider } from "@/components/theme-provider";
 
-import { WebSocketInitializer } from "@/components/websocket-initializer";
-
 const ibmSans = IBM_Plex_Sans({
   variable: "--font-ibm-sans",
   subsets: ["latin"],
@@ -28,25 +26,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Read environment variable at runtime (Server Component)
-  const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
-
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
-      >
-        <WebSocketInitializer url={wsUrl} />
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <ToastContainer />
-        </ThemeProvider>
-      </body>
-    </html>
+  <body
+    className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
+  >
+    <ThemeProvider
+      attribute="data-theme"
+      defaultTheme="dark"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {children}
+      <ToastContainer />
+    </ThemeProvider>
+  </body>
+    </html >
   );
 }
