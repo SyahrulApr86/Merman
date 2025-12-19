@@ -52,6 +52,8 @@ RUN chown nextjs:nodejs .next
 # We assume standalone output structure, but we overlay strict production node_modules 
 # to ensure external scripts (like migrate.mjs) have their dependencies (drizzle-orm, postgres)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+# Force remove standalone node_modules to guarantee we use the full production set
+RUN rm -rf node_modules
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
