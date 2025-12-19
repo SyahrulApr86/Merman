@@ -10,6 +10,12 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+# Create a separate stage for production dependencies
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
@@ -43,8 +49,12 @@ RUN chown nextjs:nodejs .next
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
+# We assume standalone output structure, but we overlay strict production node_modules 
+# to ensure external scripts (like migrate.mjs) have their dependencies (drizzle-orm, postgres)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
 # Copy migration files and script
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
