@@ -9,6 +9,7 @@ import type {
     FileVersionContentResponse,
 } from './types';
 
+const DEFAULT_WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
 const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 class WebSocketClient {
@@ -18,6 +19,21 @@ class WebSocketClient {
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
     private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
+    private url: string = DEFAULT_WS_URL;
+
+    // Allow runtime configuration of the URL
+    setUrl(url: string) {
+        if (url && url !== this.url) {
+            this.url = url;
+            if (this.isConnected) {
+                this.disconnect();
+            }
+        }
+    }
+
+    get currentUrl() {
+        return this.url;
+    }
 
     get status(): ConnectionStatus {
         return this._status;
@@ -45,18 +61,27 @@ class WebSocketClient {
         this.token = token;
         this.setStatus('connecting');
 
-        // Use relative path for connection (works with reverse proxy)
-        // This automatically handles ws:// vs wss:// based on current page protocol
-        this.socket = io({
+        // Check if the URL is relative (starts with /) or absolute
+        // If it's relative, we use the default io() behavior (window.location.host)
+        // If it's absolute, we pass it as the first argument
+        const isRelative = this.url.startsWith('/');
+
+        const options: any = {
             path: '/socket.io',
-            transports: ['websocket'],
+            transports: ['websocket', 'polling'], // Allow polling fallback
             auth: { token },
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: this.maxReconnectAttempts,
-            timeout: 10000,
-        });
+            timeout: 20000, // Increased timeout
+        };
+
+        if (isRelative) {
+            this.socket = io(options);
+        } else {
+            this.socket = io(this.url, options);
+        }
 
         this.setupEventListeners();
     }
