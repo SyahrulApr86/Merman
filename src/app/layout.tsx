@@ -26,19 +26,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  <body
-    className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
-  >
-    <ThemeProvider
-      attribute="data-theme"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-    >
-      {children}
-      <ToastContainer />
-    </ThemeProvider>
-  </body>
-    </html >
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
+      >
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <ToastContainer />
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
