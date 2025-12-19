@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   description: "A fullstack Mermaid.js IDE",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
