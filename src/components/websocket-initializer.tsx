@@ -12,7 +12,6 @@ export function WebSocketInitializer({ url }: WebSocketInitializerProps) {
 
     useEffect(() => {
         if (!initialized.current && url) {
-            console.log('Initializing WebSocket with URL:', url);
             wsClient.setUrl(url);
             initialized.current = true;
         }

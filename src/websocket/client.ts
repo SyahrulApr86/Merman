@@ -23,7 +23,7 @@ class WebSocketClient {
 
     setUrl(url: string) {
         if (url && url !== this.url) {
-            console.log('Using WebSocket URL from config:', url);
+
             this.url = url;
             // If connected, we might want to reconnect, but usually this is set before connection
             if (this.isConnected) {
@@ -58,14 +58,14 @@ class WebSocketClient {
 
     connect(token: string): void {
         if (this.socket?.connected) {
-            console.log('WebSocket already connected');
+
             return;
         }
 
         this.token = token;
         this.setStatus('connecting');
 
-        console.log('Connecting to WebSocket:', this.url);
+
 
         this.socket = io(this.url, {
             auth: { token },
@@ -84,13 +84,13 @@ class WebSocketClient {
         if (!this.socket) return;
 
         this.socket.on('connect', () => {
-            console.log('✅ WebSocket connected');
+
             this.setStatus('connected');
             this.reconnectAttempts = 0;
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log('❌ WebSocket disconnected:', reason);
+
             this.setStatus('disconnected');
 
             // Auto reconnect for certain disconnect reasons
