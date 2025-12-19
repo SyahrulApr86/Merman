@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 
 import { WebSocketInitializer } from "@/components/websocket-initializer";
 
+import { DebugEnv } from "@/components/debug-env";
+
 const ibmSans = IBM_Plex_Sans({
   variable: "--font-ibm-sans",
   subsets: ["latin"],
@@ -37,6 +39,7 @@ export default function RootLayout({
         className={`${ibmSans.variable} ${ibmMono.variable} antialiased bg-background text-foreground font-sans`}
       >
         <WebSocketInitializer url={wsUrl} />
+        <DebugEnv url={wsUrl} />
         <ThemeProvider
           attribute="data-theme"
           defaultTheme="dark"
